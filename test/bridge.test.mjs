@@ -127,11 +127,25 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
       { name: "clean-supported-sdk-client", version: "1" },
       { capabilities: {} },
     );
+    const stdio = JSON.parse(
+      await readFile(path.join(root, ".mcp.json"), "utf8"),
+    ).mcpServers.promptframe;
+    const paths = {
+      PROMPTFRAME_CREATION_CONFIG: config,
+      XDG_CONFIG_HOME: path.join(temporary, "empty-default-config"),
+    };
     await client.connect(
       new StdioClientTransport({
-        command: process.execPath,
-        args: [bin, "bridge"],
-        env: { PROMPTFRAME_CREATION_CONFIG: config },
+        command: stdio.command,
+        args: stdio.args,
+        cwd: path.resolve(root, stdio.cwd ?? "."),
+        env: {
+          // An omitted custom path must never fall back to personal credentials.
+          XDG_CONFIG_HOME: paths.XDG_CONFIG_HOME,
+          ...Object.fromEntries(
+            (stdio.env_vars ?? []).map((name) => [name, paths[name]]),
+          ),
+        },
         stderr: "pipe",
       }),
     );

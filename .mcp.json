@@ -2,7 +2,9 @@
   "mcpServers": {
     "promptframe": {
       "command": "node",
-      "args": ["${PLUGIN_ROOT}/bin/promptframe-creation.mjs", "bridge"]
+      "args": ["bin/promptframe-creation.mjs", "bridge"],
+      "cwd": ".",
+      "env_vars": ["PROMPTFRAME_CREATION_CONFIG", "XDG_CONFIG_HOME"]
     }
   }
 }
