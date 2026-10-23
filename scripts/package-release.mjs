@@ -128,6 +128,10 @@ export function classifyPublished(metadata, manifest) {
 
 export function validatePublishPlan(manifest, existing, latest) {
   const state = classifyPublished(existing, manifest);
+  // npm creates this exact placeholder when staging a package for the first
+  // time. It is not a functional release; an existing release must still wait
+  // for latest to advance before the publication is considered complete.
+  if (latest?.version === "0.0.0-stage") return state === "absent" ? "absent" : "awaiting_latest";
   if (latest) {
     if (!/^\d+\.\d+\.\d+$/.test(latest.version)) fail("registry_latest_version_unsupported");
     const previous = latest.version.split(".").map(Number), next = manifest.version.split(".").map(Number);
