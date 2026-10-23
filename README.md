@@ -17,6 +17,31 @@ API 地址由你的 Studio 提供，例如占位格式 `https://your-platform.ex
 
 凭据保存在用户配置目录的 `promptframe-creation/credentials.json`，目录0700、文件0600。可用 `PROMPTFRAME_CREATION_CONFIG` 指定独立安全文件；仓库和 Codex 配置只引用桥，不含 Token。setup 不修改个人 Coding Agent 配置或登录。
 
+## 平台地址与环境
+
+首次连接时，由用户提供所用 Studio 的 API 地址，传给 `setup --endpoint`。GitHub 仓库地址不是平台地址；客户端不会根据当前工作目录或 Token 猜测域名，也没有内置生产地址。传入的 `/api` 会规范化为 `/api/mcp`，也可直接提供 `/api/mcp`。
+
+本地同机接入可使用 `http://localhost:3500/api`；正式服务使用该部署提供的 HTTPS API 地址。这里的 localhost 指桥进程所在的运行环境，容器或远程客户端需使用其实际可达地址。地址与该环境生成的 Token 一起保存在同一份安全配置文件中。
+
+本地与生产使用不同的 `PROMPTFRAME_CREATION_CONFIG` 文件。已有文件绑定另一地址时，setup 会要求独立配置，不会覆盖切端。启动 Codex/桥时固定使用对应配置路径；运行中的桥不会因修改环境变量或配置文件而热切换，切换后需重启对应连接。当前没有内置多环境选择命令。
+
+## 用组件丰富视频内容
+
+外部创作 Agent 可以复用平台中的组件，也可以按需开发新组件，例如机制动态图解、对比视图和可参数化图表。先从 MCP 当前工具目录发现组件检索与 schema 读取能力，选择已可用的组件并按 schema 填充 props，使用平台返回的 `componentRef`。CLI 的 `discovery` 用于查看端点能力，`component list` 用于查看项目声明；它们不等于组件市场搜索。
+
+需要新组件时，按需阅读独立的 [组件作者仓库与入门说明](https://github.com/ty-teams/promptframe-component-authoring#readme)、[组件创作 Skill](https://github.com/ty-teams/promptframe-component-authoring/blob/main/skills/component-authoring/SKILL.md) 和 [Authoring Guide](https://github.com/ty-teams/promptframe-component-authoring/blob/main/AUTHORING.md)。公开工具包为：
+
+| 工具包 | 用途 |
+| --- | --- |
+| [`@promptframe/cli`](https://www.npmjs.com/package/@promptframe/cli) | `promptframe` 命令：检查、预览、打包、上传和查询平台构建状态；[CLI 使用说明](https://github.com/ty-teams/promptframe-component-authoring/blob/main/packages/cli/README.md) |
+| [`create-promptframe-component`](https://www.npmjs.com/package/create-promptframe-component) | 创建组件项目与本地预览入口 |
+| [`@promptframe/component-kit`](https://www.npmjs.com/package/@promptframe/component-kit) | 组件布局、时序和预览等开发辅助能力 |
+| [`@promptframe/contracts`](https://www.npmjs.com/package/@promptframe/contracts) | 平台公开组件合同与标准 |
+
+组件开发放在独立的作者项目中，仅在需要时安装这些工具；单纯连接 MCP 不要求预装组件工具链。按当前公开文档和平台标准选择兼容版本，完成本地检查、预览、打包与上传后，再读取平台构建/审核及可用状态。上传受理不等于已可用于作品；可用后重新从平台读取组件身份、版本与 schema，再写入 VideoSpec。npm 包名、本地路径或原始脚本 URL 都不能替代 `componentRef`。
+
+组件 CLI 的端点由该部署提供，按 CLI 的登录与项目说明单独配置；不要将创作 MCP 地址直接当作 CLI 地址。组件上传授权与本仓创作 Token 用途不同。可复用组件遵循 `marketplace_authoring`，仅供当前项目的组件遵循 `project_private_generation`，并以平台实际授权为准；本地写代码或上传组件不会代替平台的制作确认。
+
 ## 连接 Codex
 
 完成上面的 `npm ci --ignore-scripts` 和 setup 后，选择以下一种接法。同一客户端不要同时启用两份桥，以免显示重复工具。

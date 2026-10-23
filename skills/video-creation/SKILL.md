@@ -17,6 +17,12 @@ description: 在 PromptFrame 中调研、规划、制作和接续视频，复用
 
 先复用已有素材和合适的已受检组件。外部客户端可用自己已有的调研、图像或本地创作能力，平台外用量不冒作平台计费；不要为省步骤而重复生成已经完成或结果未知的订单。
 
+组件也是视频表达手段：从平台当前工具目录发现组件检索、详情与 schema 读取能力，按真实 schema 构造 props，并使用平台返回的 `componentRef`。组件 CLI 的 `discovery` 和 `component list` 分别是端点能力与项目声明读面，不作为市场搜索的替代。
+
+确需新组件时，阅读独立的 [组件创作 Skill](https://github.com/ty-teams/promptframe-component-authoring/blob/main/skills/component-authoring/SKILL.md)、[工具链 README](https://github.com/ty-teams/promptframe-component-authoring#readme) 与 [Authoring Guide](https://github.com/ty-teams/promptframe-component-authoring/blob/main/AUTHORING.md)，按需使用 `@promptframe/cli`、`create-promptframe-component`、`@promptframe/component-kit` 和 `@promptframe/contracts`。在独立作者项目中开发，按当前标准选择兼容版本；经本地检查/预览、上传及平台构建审核确认可用后，再读取组件身份、版本和 schema 接回作品。上传受理、本地预览或 npm 包名不代表平台组件已就绪。
+
+CLI 的端点与组件上传授权按其公开说明配置，创作 Token 不代替组件凭据。可复用组件走 `marketplace_authoring`，项目私有组件走 `project_private_generation`，遵循用户用途及平台权限；组件开发或上传不代替本人制作确认。具体 CLI 命令由其维护中的文档提供，不在本 Skill 复制参数手册。
+
 用平台的 brief 上报能力保存外部需求/交接说明，明确是客户端上报。没有上报的外部聊天、思考或本地代码仍未知，不能伪造为平台历史或用户已确认原话。
 
 读取当前业务目录与 exact schema 后调用工具，不在本 Skill 维护参数副本。CreativePlan 独立创建/读取/修改，保留完整需求、导演方案和可信来源。其它业务调用引用已保存的方案，不夹带另一份 Plan 或反向覆盖它。
