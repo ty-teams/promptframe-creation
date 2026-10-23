@@ -79,3 +79,7 @@ codex plugin list
 ```bash
 npm test
 ```
+
+## 维护与发行
+
+GitHub Actions 检查 Node 20/24、包内容和隔离安装。npm 发布使用独立版本及 GitHub OIDC，配置和操作见[发布手册](docs/releasing.md)。当前包保留 `private: true`；手工运行发布工作流只做检查，正式发行还需要包就绪和匹配的版本标签。
