@@ -4,6 +4,22 @@
 
 需要 Node.js 20+。当前安全凭据存储按 Linux、WSL 和 macOS 的文件权限实现；原生 Windows ACL 尚未验证。
 
+## 使用与维护入口
+
+- 使用平台创作：从下面的 npm 基础版或源码安装开始，再读公开 `video-creation` Skill。
+- 维护客户端、插件与安装流程：读[开发说明](docs/development.md)及本仓 AGENTS。
+- 打包和发行：读[发布手册](docs/releasing.md)，复用现有脚本与 GitHub OIDC。
+
+## 源码与发行范围
+
+| 分发或源码 | 当前适用范围 |
+| --- | --- |
+| 已发行 npm `0.1.1` / `creation-v0.1.1` | 固定源码 `3da232e267117794fcbcbb1920cbdf9f3f294c14` 的基础客户端；同一安全配置共享安装身份 |
+| 当前源码中的宿主 thread 接线 | 已有按聊天识别与控制版本接线，见下方源码说明；不包含在上述固定 npm 包中 |
+| 用户级插件安装/升级与完整创作旅程 | 以目标客户端的真实安装和连接验证为准，不能由 npm 发行或源码提交推导 |
+
+工作分支中的 package 版本号可能尚未随后继源码更新；核功能时比较源码 ref、固定发行 tag 与实际安装版本，不只看版本字符串。未来版本以各自发行说明为准。
+
 ## npm 基础版
 
 `@promptframe/creation@0.1.1` 提供 `setup`、`status`、`bridge` 及包内的 `video-creation` Skill。首次发行状态以官方 npm registry 为准。可使用以下命令配置并连接 MCP：
@@ -77,15 +93,15 @@ codex plugin list
 
 支持本地插件的 ChatGPT 桌面端可按 [OpenAI 的本地目录安装说明](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)，选择 `PromptFrame Creation (local)` 后安装插件。目录入口是本仓 `.agents/plugins/marketplace.json`，相对路径从 checkout 根解析；插件由 `.codex-plugin/plugin.json` 声明。不同客户端版本的安装入口可能不同，以该版本的命令帮助和官方说明为准。
 
-先安装依赖，再安装插件：本地目录会复制插件到客户端缓存，桥需要一起带入 `npm ci` 生成的 `node_modules`。只复制 manifest 或尚未安装依赖的源码目录，会缺少运行依赖。更新 checkout 后再次运行 `npm ci --ignore-scripts`，按客户端的卸载、重装流程刷新缓存，并重启客户端；仅修改源码不代表缓存已更新。
+先安装依赖，再安装插件：本地目录会复制插件到客户端缓存，当前源码桥需要一起带入 `npm ci` 生成的 `node_modules`。只复制 manifest 或尚未安装依赖的源码目录，会缺少运行依赖。更新 checkout 后再次运行 `npm ci --ignore-scripts`，按客户端的卸载、重装流程刷新缓存，并重启客户端；仅修改源码不代表缓存已更新。普通 npm 安装会补运行依赖；Codex 的 npm 来源插件安装需单独验证解包产物的依赖闭包，不能据此源码安装步骤认定冷安装已通过。
 
-桥使用 `cwd: "."` 从已安装的插件根目录启动，脚本参数是相对路径；该路径解析由 [Codex 的插件配置实现](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/codex-mcp/src/plugin_config.rs)提供。凭据继续从用户安全配置目录读取，既不打进插件，也不写入 Codex 配置。插件会转发 `PROMPTFRAME_CREATION_CONFIG` 和 `XDG_CONFIG_HOME` 两个路径变量，需让启动 Codex 的进程继承 setup 时的值。安装后确认桥已连接、能读取平台工具，再使用 `video-creation`；插件安装成功本身不代表平台授权或创作成功。这里不代表已发布到公共插件目录或 npm。
+桥使用 `cwd: "."` 从已安装的插件根目录启动，脚本参数是相对路径；该路径解析由 [Codex 的插件配置实现](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/codex-mcp/src/plugin_config.rs)提供。凭据继续从用户安全配置目录读取，既不打进插件，也不写入 Codex 配置。插件会转发 `PROMPTFRAME_CREATION_CONFIG` 和 `XDG_CONFIG_HOME` 两个路径变量，需让启动 Codex 的进程继承 setup 时的值。安装后确认桥已连接、能读取平台工具，再使用 `video-creation`；插件安装成功本身不代表平台授权或创作成功。npm 基础包已发行；官方插件目录上架、npm 来源插件注册与冷安装需分别验证，本节不声明这些结果。
 
 卸载插件可用该客户端的卸载入口，支持时也可运行 `codex plugin remove promptframe-creation@promptframe-creation-local`；显式添加的桥则使用 `codex mcp remove promptframe`。这只移除客户端接线，不撤销平台 Token 或取消已接受任务。需要撤销创作授权时，仍由本人在 Studio 处理。
 
 开始前读取平台当前项目、作品、编辑权及业务工具 schema。已有作品需本人在 Studio 确认接管；首次制作也由平台本人确认。已接受的异步工具返回持久 task，客户端停止等待不取消订单。网络结果未知时查原 task 或用相同幂等键重试。本人可随时接回网页，原费用与期限保持。
 
-支持的 Codex 宿主在每次 MCP 调用的元数据中自动提供 `threadId`。桥将它与当前环境、账号和安装身份交给平台区分外部编辑者；不要求模型填身份字段。缺失或格式错误时，新建、接管及新写入会明确拒绝，不退回多个聊天共用的编辑身份；原已接受任务的只读查询保留。其它宿主及旧版本需要独立验证，不能仅凭 MCP 连通宣称会话隔离已支持。
+以下描述当前源码的宿主接线；已发行 `0.1.1` 固定包仍按上方基础版说明使用。支持的 Codex 宿主在每次 MCP 调用的元数据中自动提供 `threadId`。桥将它与当前环境、账号和安装身份交给平台区分外部编辑者；不要求模型填身份字段。缺失或格式错误时，新建、接管及新写入会明确拒绝，不退回多个聊天共用的编辑身份；原已接受任务的只读查询保留。其它宿主及旧版本需要独立验证，不能仅凭 MCP 连通宣称会话隔离已支持。
 
 桥自动携带本线程当前已获批准的 `controlVersion`，工具目录不向模型要求该参数。作品的 `expectedRevision` 仍沿原并发合同；桥不替模型填最新内容版本。旧共享安装的作品也不会被升级后的第一个聊天自动取得，仍须正常申请或从 Studio 接回。运行中的桥固定使用启动时的环境和凭据，升级不轮换 Token。
 

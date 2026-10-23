@@ -15,6 +15,12 @@ node scripts/package-release.mjs smoke /tmp/creation-package
 
 安装包必须包含运行脚本、Skill、三个隐藏插件入口、README 和 LICENSE；排除测试、工作流、发行脚本及个人配置。隔离安装会从 registry 安装普通依赖并运行 `--help`，只使用临时配置目录。此项不代表特定宿主插件缓存、原生 Windows ACL 或完整创作旅程已经验收。
 
+## npm 安装与宿主插件安装的验证范围
+
+现有 `smoke` 明确执行普通 `npm install`，由 npm 补齐 `package.json.dependencies` 后运行 CLI。Codex 的 npm 来源插件安装在已核[官方实现](https://github.com/openai/codex/blob/de06fd0be4f465bc28c3111bdadaabda5dfdebcd/codex-rs/core-plugins/src/npm_source.rs)中使用 `npm pack --ignore-scripts` 后解包，不执行相同的依赖安装步骤。
+
+当前桥顶层导入 MCP SDK，发布包未携带 node_modules，因此这两条安装路径需要独立核实。交付“从目录安装插件即可运行”时，应先提供包含必要依赖的桥产物，或明确交付并验证完整依赖；不能依赖发布后 lifecycle script、开发者已有 node_modules 或仅以 `--help` 普通安装测试冒宿主冷安装通过。具体源码与验收区分见[开发说明](development.md)。本说明只校准验证范围，不声明已实现该构建产物。
+
 ## 一次性发布配置
 
 GitHub 仓库创建 Environment `npm-production`，部署规则只允许 `creation-v*` 标签。无需 npm 长期发布 Token。npm 账号所有者完成新包初始化后，在该包的 Trusted Publisher 页面配置：
