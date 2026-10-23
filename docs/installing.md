@@ -5,7 +5,7 @@
 从 Studio 的“连接与授权”复制当前环境的指引。在本机终端执行：
 
 ```bash
-npx --yes @promptframe/creation@0.2.0 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.2.1 connect --endpoint <Studio提供的API地址>
 ```
 
 `/api` 会规范化到 `/api/mcp`；也可直接提供 `/api/mcp`。保留 Studio 实际可达的 HTTPS origin，包括私有网络域名，不把远程地址替换成本机 localhost。`0.1.1` 是历史基础包；它不支持此用户级插件引导。新版本是否已发行，以 registry 的实际版本和对应固定标签为准。
@@ -21,7 +21,7 @@ npx --yes @promptframe/creation@0.2.0 connect --endpoint <Studio提供的API地�
 另一个环境或账号应由用户选择不同名称：
 
 ```bash
-npx --yes @promptframe/creation@0.2.0 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.2.1 connect --profile work-account --endpoint <另一环境API地址>
 ```
 
 命名 profile 使用独立凭据和独立插件名；新桥配置固定具体凭据文件。已有文件绑定另一 endpoint 时拒绝覆盖，运行中的桥也不会热切环境。相同 endpoint 的不同账号同样用不同 profile；不要尝试从 Token 或作品名猜账号。`--config <安全文件>` 可指定已存在的私有配置，但不得把不同环境指向同一文件。

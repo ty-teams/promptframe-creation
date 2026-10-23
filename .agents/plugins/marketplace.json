@@ -1,10 +1,17 @@
 {
   "name": "promptframe-creation",
-  "interface": { "displayName": "PromptFrame Creation" },
+  "interface": {
+    "displayName": "PromptFrame Creation"
+  },
   "plugins": [
     {
       "name": "promptframe-creation",
-      "source": { "source": "npm", "package": "@promptframe/creation", "version": "0.2.0", "registry": "https://registry.npmjs.org/" },
+      "source": {
+        "source": "npm",
+        "package": "@promptframe/creation",
+        "version": "0.2.1",
+        "registry": "https://registry.npmjs.org/"
+      },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_USE"

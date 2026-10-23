@@ -4,7 +4,6 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import {buildRuntime} from './build-runtime.mjs';
 
 export const PACKAGE = "@promptframe/creation";
 export const REPOSITORY = "ty-teams/promptframe-creation";
@@ -66,6 +65,7 @@ async function npmEnvironment(directory, { publishing = false } = {}) {
 
 export async function pack(directory) {
   const pkg = await metadata();
+  const {buildRuntime}=await import('./build-runtime.mjs');
   await buildRuntime();
   await mkdir(directory, { recursive: true });
   const temporary = await mkdtemp(path.join(os.tmpdir(), "creation-pack-"));

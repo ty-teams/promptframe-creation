@@ -19,7 +19,7 @@ node scripts/package-release.mjs smoke /tmp/creation-package
 
 现有 `smoke` 明确执行普通 `npm install`，由 npm 补齐 `package.json.dependencies` 后运行 CLI。Codex 的 npm 来源插件安装在已核[官方实现](https://github.com/openai/codex/blob/de06fd0be4f465bc28c3111bdadaabda5dfdebcd/codex-rs/core-plugins/src/npm_source.rs)中使用 `npm pack --ignore-scripts` 后解包，不执行相同的依赖安装步骤。
 
-0.2.0由`build-runtime.mjs`显式生成自包含运行文件，SDK为构建/测试依赖；`pack`先构建再按既有ignore-scripts打包。包必须含dist运行文件/许可证、两个Skill及插件入口，不能依赖安装后脚本。CI同时核纯解包运行；真实Codex npm来源安装、Skill发现和MCP启动仍分别记录，不用普通npm install smoke替代。用户级安装见[安装说明](installing.md)。
+0.2.1由`build-runtime.mjs`显式生成自包含运行文件，SDK为构建/测试依赖；`pack`先构建再按既有ignore-scripts打包。包必须含dist运行文件/许可证、两个Skill及插件入口，不能依赖安装后脚本。CI同时核纯解包运行；真实Codex npm来源安装、Skill发现和MCP启动仍分别记录，不用普通npm install smoke替代。用户级安装见[安装说明](installing.md)。
 
 ## 一次性发布配置
 

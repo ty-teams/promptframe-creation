@@ -55,7 +55,8 @@ test('failed upgrade keeps the old default and files; another explicit profile h
   const opts={sourceRoot:source,env:f.env,runCodex:f.runCodex,checkRuntime:f.checkRuntime};const old=await installForUser(opts);
   const clone=path.join(f.root,'new-source');await mkdir(clone);
   for(const n of ['package.json','README.md','LICENSE','bin','dist','lib','skills','docs','.codex-plugin','.mcp.json'])await cp(path.join(source,n),path.join(clone,n),{recursive:true});
-  for(const file of ['package.json','.codex-plugin/plugin.json']){const p=path.join(clone,file),x=await json(p);x.version='0.2.1';await writeFile(p,JSON.stringify(x));}
+  const next=old.version.split('.').map(Number);next[2]++;
+  for(const file of ['package.json','.codex-plugin/plugin.json']){const p=path.join(clone,file),x=await json(p);x.version=next.join('.');await writeFile(p,JSON.stringify(x));}
   f.setFail(true);await assert.rejects(installForUser({...opts,sourceRoot:clone}),/registration_unconfirmed/);f.setFail(false);
   assert.equal((await json(old.currentFile)).version,old.version);assert((await stat(path.join(old.versionRoot,'dist/cli.mjs'))).isFile());
   const alternate=await installForUser({...opts,profile:'second-account'});

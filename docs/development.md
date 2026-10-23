@@ -31,7 +31,7 @@
 
 源码经 GitHub Actions 打包发行到 npm；插件目录记录包名/版本或源码位置。安装后，Codex 加载本地副本并按配置启动 Node 桥；桥通过 stdio 接收调用，读取独立安全配置，再通过 HTTPS MCP 连接所选平台。GitHub、npm 与目录索引负责获取版本，不进入正常工具调用链。Token 不进入源码、插件包或命令参数。
 
-0.2.0公开目录固定npm来源；`connect`另以用户级受管版本注册本地插件。`scripts/build-runtime.mjs`显式bundle MCP SDK及必要依赖，拒绝除Node builtins之外的外部import并附第三方许可证。npm_source仍只pack/unpack，不执行npm install；因此`test/package-runtime.test.mjs`从无node_modules解包核可运行。宿主注册/实际Skill及MCP启动另核，普通npm install不代替。
+0.2.1公开目录固定npm来源；`connect`另以用户级受管版本注册本地插件。`scripts/build-runtime.mjs`显式bundle MCP SDK及必要依赖，拒绝除Node builtins之外的外部import并附第三方许可证。npm_source仍只pack/unpack，不执行npm install；因此`test/package-runtime.test.mjs`从无node_modules解包核可运行。宿主注册/实际Skill及MCP启动另核，普通npm install不代替。
 
 ## 相称验证
 

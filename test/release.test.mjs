@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile, mkdir, cp } from "node:fs/promises";
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import os from "node:os";
 import path from "node:path";
 import { PACKAGE, REPOSITORY, validateMetadata, validateRelease, validateFiles,
@@ -11,6 +13,20 @@ const pkg = { name: PACKAGE, version: "0.1.0", private: false,
 const lock = { name: PACKAGE, version: pkg.version, packages: { "": { name: PACKAGE, version: pkg.version } } };
 const plugin = { version: pkg.version };
 const env = { GITHUB_REPOSITORY: REPOSITORY, GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/tags/creation-v0.1.0" };
+
+test('tag preflight and publisher module load before npm ci without build dependencies',async()=>{
+ const root=fileURLToPath(new URL('..',import.meta.url));const tmp=await mkdtemp(path.join(os.tmpdir(),'creation-release-preflight-'));
+ try{
+  await mkdir(path.join(tmp,'scripts'));await mkdir(path.join(tmp,'.codex-plugin'));
+  for(const file of ['package.json','package-lock.json','.codex-plugin/plugin.json','scripts/package-release.mjs','scripts/build-runtime.mjs'])
+   await cp(path.join(root,file),path.join(tmp,file));
+  const pkg=JSON.parse(await readFile(path.join(tmp,'package.json'),'utf8'));
+  const result=execFileSync(process.execPath,[path.join(tmp,'scripts/package-release.mjs'),'check-release'],{
+   cwd:tmp,encoding:'utf8',env:{...process.env,GITHUB_REPOSITORY:REPOSITORY,GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/tags/creation-v'+pkg.version},
+  });
+  assert.equal(JSON.parse(result).status,'release_ready');
+ }finally{await rm(tmp,{recursive:true,force:true});}
+});
 
 test("release metadata binds package, lock and plugin versions", () => {
   assert.equal(validateMetadata(pkg, lock, plugin), pkg);
