@@ -15,6 +15,7 @@ import {
   writeCredentials,
 } from "../lib/credentials.mjs";
 import { connectPlatform } from "../lib/connection.mjs";
+import { createHostCallBridge } from "../lib/host-context.mjs";
 
 const args = process.argv.slice(2),
   command = args.shift(),
@@ -149,23 +150,22 @@ async function bridge() {
   const credentials = await readCredentials();
   if (!credentials) throw new CreationClientError("setup.required");
   const client = await connectPlatform(credentials),
+    host = createHostCallBridge(client),
     server = new Server(
       { name: "promptframe-creation", version: "0.1.0" },
       { capabilities: { tools: {} } },
     );
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     try {
-      return await client.listTools();
+      return await host.listTools();
     } catch {
       throw new Error("creation.connection_unresolved");
     }
   });
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
-      return await client.callTool(request.params, undefined, {
-        timeout: 60_000,
-      });
-    } catch {
+      return await host.call(request.params);
+    } catch (error) {
       return {
         isError: true,
         content: [
@@ -173,8 +173,15 @@ async function bridge() {
             type: "text",
             text: JSON.stringify({
               success: false,
-              errorCode: "creation.connection_unresolved",
-              action: "read_original_task_or_retry_same_idempotency_key",
+              errorCode: error instanceof CreationClientError
+                ? error.message : "creation.connection_unresolved",
+              action: error instanceof CreationClientError
+                ? error.message.startsWith("creation.host_")
+                  ? "use_supported_codex_plugin_with_host_thread_identity"
+                  : error.message === "creation.editor_not_current"
+                    ? "request_control_and_confirm_in_studio"
+                    : "read_current_platform_facts_without_replaying_business"
+                : "read_original_task_or_retry_same_idempotency_key",
             }),
           },
         ],
