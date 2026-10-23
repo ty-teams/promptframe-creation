@@ -6,14 +6,14 @@
 
 ## npm 基础版
 
-`@promptframe/creation@0.1.0` 提供 `setup`、`status`、`bridge` 及包内的 `video-creation` Skill。首次发行状态以官方 npm registry 为准。可使用以下命令配置并连接 MCP：
+`@promptframe/creation@0.1.1` 提供 `setup`、`status`、`bridge` 及包内的 `video-creation` Skill。首次发行状态以官方 npm registry 为准。可使用以下命令配置并连接 MCP：
 
 ```bash
-npx --yes @promptframe/creation@0.1.0 setup --endpoint <platform-api-base>
-codex mcp add promptframe -- npx --yes @promptframe/creation@0.1.0 bridge
+npx --yes @promptframe/creation@0.1.1 setup --endpoint <platform-api-base>
+codex mcp add promptframe -- npx --yes @promptframe/creation@0.1.1 bridge
 ```
 
-这是基础 MCP 接法；此命令不自动加载创作 Skill，配套插件安装见下文。当前客户端身份按一份安全配置中的 clientId 区分，使用同一配置的聊天共享该身份；需要分别控制作品时使用独立配置。自动按 Codex 聊天隔离、用户级安装引导、自动升级与 Studio 活跃入口属于后续版本能力。本版的范围见[0.1.0 说明](docs/releases/0.1.0.md)。
+这是基础 MCP 接法；此命令不自动加载创作 Skill，配套插件安装见下文。当前客户端身份按一份安全配置中的 clientId 区分，使用同一配置的聊天共享该身份；需要分别控制作品时使用独立配置。自动按 Codex 聊天隔离、用户级安装引导、自动升级与 Studio 活跃入口属于后续版本能力。本版的范围见[0.1.1 说明](docs/releases/0.1.1.md)。
 
 ```bash
 git clone https://github.com/ty-teams/promptframe-creation.git
