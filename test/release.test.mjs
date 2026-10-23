@@ -61,3 +61,17 @@ test("registry reruns require matching bytes and provenance without republishing
   assert.equal(validatePublishPlan(manifest, metadata, null), "awaiting_latest");
   assert.equal(validatePublishPlan(manifest, metadata, { version: "0.0.9" }), "awaiting_latest");
 });
+
+test("npm's first-package stage placeholder permits publishing but never proves completion", () => {
+  const manifest = { name: PACKAGE, version: "0.1.0", integrity: "sha512-fixed" };
+  const placeholder = { version: "0.0.0-stage" };
+  const metadata = { ...manifest, dist: { integrity: manifest.integrity, attestations: { provenance: {} } } };
+  assert.equal(validatePublishPlan(manifest, null, placeholder), "absent");
+  assert.equal(validatePublishPlan(manifest, metadata, placeholder), "awaiting_latest");
+  assert.equal(validatePublishPlan(manifest, { ...metadata, dist: { integrity: manifest.integrity } }, placeholder), "awaiting_latest");
+  assert.throws(() => validatePublishPlan(manifest, { ...metadata, dist: { integrity: "sha512-other" } }, placeholder), /integrity_conflict/);
+  assert.throws(() => validatePublishPlan(manifest, { ...metadata, name: "other" }, placeholder), /identity_conflict/);
+  assert.equal(validatePublishPlan(manifest, { ...metadata, dist: { integrity: manifest.integrity } }, manifest), "awaiting_provenance");
+  for (const version of ["0.0.0-preview", "0.1.0-beta.1", "0.2.0-stage"])
+    assert.throws(() => validatePublishPlan(manifest, null, { version }), /registry_latest_version_unsupported/);
+});
