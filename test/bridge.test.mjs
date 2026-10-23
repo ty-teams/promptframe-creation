@@ -42,6 +42,9 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
   const token = "pf_create_" + randomBytes(32).toString("base64url"),
     headers = [],
     calls = [];
+  const threadA = "01a10000-0000-7000-8000-000000000001",
+    threadB = "01a10000-0000-7000-8000-000000000002";
+  let ownerThread = threadA, controlVersion = 2;
   const server = http.createServer(async (req, res) => {
     headers.push(req.headers);
     if (req.headers.authorization !== "Bearer " + token) {
@@ -62,10 +65,21 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
       { capabilities: { tools: {} } },
     );
     mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: [{ name: "platform_call_tool", inputSchema: { type: "object" } }],
+      tools: [{ name: "platform_call_tool", inputSchema: {
+        type: "object", properties: { controlVersion: { type: "integer" } },
+        required: ["controlVersion"],
+      } }],
     }));
     mcp.setRequestHandler(CallToolRequestSchema, async (message) => {
       calls.push(message.params);
+      if (message.params.name === "platform_read_session") {
+        return { content: [{ type: "text", text: JSON.stringify({
+          payloadRevision: 1,
+          sessionId: "own-work",
+          control: { controlVersion, editor: { kind: "client", name: "Own fixture",
+            isCurrentClient: message.params._meta?.threadId === ownerThread } },
+        }) }] };
+      }
       return {
         content: [
           {
@@ -76,6 +90,7 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
               status: "waiting",
               originalDeadline: "2030-01-01T00:00:00.000Z",
               source: "local_protocol_fixture",
+              control: { controlVersion: 999, editor: { kind: "client", isCurrentClient: true } },
             }),
           },
         ],
@@ -153,26 +168,63 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
       (await client.listTools()).tools[0].name,
       "platform_call_tool",
     );
+    const visible = (await client.listTools()).tools[0].inputSchema;
+    assert.equal(visible.properties.controlVersion, undefined,
+      "the model does not supply the approved editor generation");
+    assert.ok(!visible.required.includes("controlVersion"));
+    const missingHost = await client.callTool({
+      name: "platform_create_session",
+      arguments: { projectId: "own-project", idempotencyKey: "missing-host" },
+    });
+    assert.equal(missingHost.isError, true);
+    assert.equal(JSON.parse(missingHost.content[0].text).errorCode,
+      "creation.host_identity_required");
+    assert.equal(calls.length, 0, "missing host has no upstream business request");
     const request = {
       name: "platform_call_tool",
+      _meta: { threadId: threadA },
       arguments: {
         projectId: "own-project",
         sessionId: "own-work",
         tool: "own_async_fixture",
         arguments: { text: "Own protocol fixture" },
-        controlVersion: 2,
         expectedRevision: 1,
         idempotencyKey: "same-original-request",
       },
     };
     const result = await client.callTool(request),
       value = JSON.parse(result.content[0].text);
-    assert.deepEqual(calls[0], request);
+    assert.deepEqual(calls[1], { ...request,
+      arguments: { ...request.arguments, controlVersion: 2 } });
+    assert.equal(calls[0].name, "platform_read_session");
+    assert.equal(calls[0]._meta.threadId, threadA);
     assert.equal(value.taskId, "own-protocol-task");
     assert.equal(value.status, "waiting");
     assert.equal(value.originalDeadline, "2030-01-01T00:00:00.000Z");
+    await client.callTool(request);
+    assert.equal(calls.filter(call => call.name === "platform_call_tool")[1].arguments.controlVersion, 2,
+      "a business result cannot publish editor authority");
+    const writes = () => calls.filter(call => call.name === "platform_call_tool");
+    const forged = await client.callTool({ ...request,
+      arguments: { ...request.arguments, controlVersion: 999 } });
+    assert.equal(forged.isError, true);
+    assert.equal(writes().length, 2, "model-supplied control cannot reach upstream");
+    ownerThread = threadB; controlVersion = 3;
+    await client.callTool({ name: "platform_read_session",
+      arguments: { projectId: "own-project", sessionId: "own-work" }, _meta: { threadId: threadA } });
+    const lost = await client.callTool(request);
+    assert.equal(lost.isError, true);
+    assert.equal(JSON.parse(lost.content[0].text).errorCode, "creation.editor_not_current");
+    assert.equal(writes().length, 2, "a fresh read never borrows the new owner's generation");
+    const acceptedB = await client.callTool({ ...request, _meta: { threadId: threadB },
+      arguments: { ...request.arguments, idempotencyKey: "independent-request-B" } });
+    assert.equal(acceptedB.isError, undefined);
+    assert.equal(writes().length, 3);
+    assert.equal(writes()[2].arguments.controlVersion, 3);
+    assert.equal(writes()[2]._meta.threadId, threadB);
     assert.ok(headers.every((h) => h["x-promptframe-client-id"] === identity));
     assert.ok(headers.every((h) => h.authorization === "Bearer " + token));
+    assert.ok(headers.every((h) => h["x-promptframe-host-kind"] === "codex"));
     await client.close();
     client = null;
     await chmod(config, 0o644);
