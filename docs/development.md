@@ -6,7 +6,9 @@
 
 | 内容 | 入口 |
 | --- | --- |
-| 命令和 stdio 桥 | `bin/promptframe-creation.mjs` |
+| 命令和 stdio 桥 | `bin/promptframe-creation.mjs`预检 → `lib/cli.mjs` / `dist/cli.mjs`自包含构建 |
+| 用户级安装与profile | `lib/user-installation.mjs` |
+| 依赖闭包/许可证 | `scripts/build-runtime.mjs` |
 | 环境地址与安全凭据 | `lib/credentials.mjs` |
 | 平台 MCP HTTP 连接 | `lib/connection.mjs` |
 | 当前源码的宿主 thread 与控制版本接线 | `lib/host-context.mjs` |
@@ -29,7 +31,7 @@
 
 源码经 GitHub Actions 打包发行到 npm；插件目录记录包名/版本或源码位置。安装后，Codex 加载本地副本并按配置启动 Node 桥；桥通过 stdio 接收调用，读取独立安全配置，再通过 HTTPS MCP 连接所选平台。GitHub、npm 与目录索引负责获取版本，不进入正常工具调用链。Token 不进入源码、插件包或命令参数。
 
-当前目录仍为 local 来源，需先装源码依赖再安装插件。普通 `npm install` 会补依赖，宿主 npm 来源的 pack/unpack 安装不应假设这一点。当前发布 tarball 没有 node_modules，而桥需要 MCP SDK；自包含桥或显式携带依赖的完整构建及宿主冷安装仍需实际交付验证。只增加目录索引不能代替这一工作。
+0.2.0公开目录固定npm来源；`connect`另以用户级受管版本注册本地插件。`scripts/build-runtime.mjs`显式bundle MCP SDK及必要依赖，拒绝除Node builtins之外的外部import并附第三方许可证。npm_source仍只pack/unpack，不执行npm install；因此`test/package-runtime.test.mjs`从无node_modules解包核可运行。宿主注册/实际Skill及MCP启动另核，普通npm install不代替。
 
 ## 相称验证
 

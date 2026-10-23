@@ -1,9 +1,16 @@
 {
   "name": "promptframe-creation",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "使用自己的推理，通过 PromptFrame 的共用工具、作品和任务创作视频。",
-  "author": { "name": "PromptFrame" },
+  "author": {
+    "name": "PromptFrame"
+  },
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
-  "requires_local_executor": true
+  "requires_local_executor": true,
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/creation-setup/SKILL.md"
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {buildRuntime} from './build-runtime.mjs';
 
 export const PACKAGE = "@promptframe/creation";
 export const REPOSITORY = "ty-teams/promptframe-creation";
@@ -36,9 +37,10 @@ export function validateRelease(pkg, env) {
 export function validateFiles(files) {
   const required = ["package.json", "README.md", "LICENSE", "bin/promptframe-creation.mjs",
     "lib/credentials.mjs", "lib/connection.mjs", "skills/video-creation/SKILL.md",
-    ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json"];
+    ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json",
+    "dist/cli.mjs","dist/THIRD_PARTY_NOTICES.txt","skills/creation-setup/SKILL.md"];
   if (required.some((name) => !files.includes(name))) fail("package_file_missing");
-  if (files.some((name) => !/^(?:package\.json|README\.md|LICENSE|\.mcp\.json|(?:bin|lib|skills|docs|\.codex-plugin|\.agents\/plugins)\/[^\r\n]+)$/.test(name)
+  if (files.some((name) => !/^(?:package\.json|README\.md|LICENSE|\.mcp\.json|(?:bin|dist|lib|skills|docs|\.codex-plugin|\.agents\/plugins)\/[^\r\n]+)$/.test(name)
     || name.split("/").some((part) => part === "..")
     || /(?:^|\/)(?:node_modules|credentials\.json|\.env(?:\..*)?)$/.test(name))) fail("package_file_forbidden");
 }
@@ -64,6 +66,7 @@ async function npmEnvironment(directory, { publishing = false } = {}) {
 
 export async function pack(directory) {
   const pkg = await metadata();
+  await buildRuntime();
   await mkdir(directory, { recursive: true });
   const temporary = await mkdtemp(path.join(os.tmpdir(), "creation-pack-"));
   try {

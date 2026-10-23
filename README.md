@@ -1,56 +1,41 @@
 # PromptFrame Creation
 
-通过自己的客户端推理，使用 PromptFrame 的共用视频工具、作品、素材和持久任务，并与 Studio 接续同一作品。此仓是薄客户端；业务、预算和账务由平台管理。
+通过自己的 Codex 推理，使用 PromptFrame 共用视频工具、作品、素材和持久任务，并与 Studio 接续同一作品。本仓是公开插件与薄桥；业务、权限、预算和账务由平台管理。
 
-需要 Node.js 20+。当前安全凭据存储按 Linux、WSL 和 macOS 的文件权限实现；原生 Windows ACL 尚未验证。
+## 安装和连接
 
-## 使用与维护入口
+需要 Node.js 20+ 及支持插件的 Codex（最低0.160.0）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
 
-- 使用平台创作：从下面的 npm 基础版或源码安装开始，再读公开 `video-creation` Skill。
-- 维护客户端、插件与安装流程：读[开发说明](docs/development.md)及本仓 AGENTS。
-- 打包和发行：读[发布手册](docs/releasing.md)，复用现有脚本与 GitHub OIDC。
+```bash
+npx --yes @promptframe/creation@0.2.0 connect --endpoint <Studio提供的API地址>
+```
 
-## 源码与发行范围
+入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后按提示正常重载插件或开新聊天，确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
 
-| 分发或源码 | 当前适用范围 |
+API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置生产/私有地址。远程客户端不要改成自己的 localhost。另一个环境或账号显式使用 `--profile <名称>`；新旧桥各固定凭据路径，不热切环境。有效 Token 不因升级、新作品或接管轮换。详细安装、升级保旧、卸载和排障见[安装说明](docs/installing.md)。Linux、WSL、macOS 使用0700目录/0600凭据；原生Windows ACL尚未验证。
+
+## 源码、包和宿主范围
+
+| 版本或层次 | 适用范围 |
 | --- | --- |
-| 已发行 npm `0.1.1` / `creation-v0.1.1` | 固定源码 `3da232e267117794fcbcbb1920cbdf9f3f294c14` 的基础客户端；同一安全配置共享安装身份 |
-| 当前源码中的宿主 thread 接线 | 已有按聊天识别与控制版本接线，见下方源码说明；不包含在上述固定 npm 包中 |
-| 用户级插件安装/升级与完整创作旅程 | 以目标客户端的真实安装和连接验证为准，不能由 npm 发行或源码提交推导 |
+| 历史 npm0.1.1 / creation-v0.1.1 | 固定3da232e267117794fcbcbb1920cbdf9f3f294c14的基础setup/status/bridge；不是此版的聊天身份和插件安装功能 |
+| 0.2.0源码与包合同 | 宿主thread隔离、桥管理控制版本、自包含运行依赖、用户级安装/两类Skill/独立profile；是否已发行以registry和固定tag为准 |
+| 实际用户宿主 | 核已安装版本、Skill加载与MCP连接；源码提交或npm发行不代替宿主及完整创作验收 |
 
-工作分支中的 package 版本号可能尚未随后继源码更新；核功能时比较源码 ref、固定发行 tag 与实际安装版本，不只看版本字符串。未来版本以各自发行说明为准。
+公开目录 `.agents/plugins/marketplace.json` 固定 npm 包版本。用户级 connect 从当前完整包注册受管本地副本；两条路径都携带运行依赖，不要求在业务仓安装SDK。不要同时启用旧的手工MCP入口和新插件；旧入口识别与安全迁移见安装说明。
 
-## npm 基础版
+## 维护入口
 
-`@promptframe/creation@0.1.1` 提供 `setup`、`status`、`bridge` 及包内的 `video-creation` Skill。首次发行状态以官方 npm registry 为准。可使用以下命令配置并连接 MCP：
-
-```bash
-npx --yes @promptframe/creation@0.1.1 setup --endpoint <platform-api-base>
-codex mcp add promptframe -- npx --yes @promptframe/creation@0.1.1 bridge
-```
-
-这是基础 MCP 接法；此命令不自动加载创作 Skill，配套插件安装见下文。当前客户端身份按一份安全配置中的 clientId 区分，使用同一配置的聊天共享该身份；需要分别控制作品时使用独立配置。自动按 Codex 聊天隔离、用户级安装引导、自动升级与 Studio 活跃入口属于后续版本能力。本版的范围见[0.1.1 说明](docs/releases/0.1.1.md)。
+维护源码先读 AGENTS 和[开发说明](docs/development.md)。在本仓开发：
 
 ```bash
-git clone https://github.com/ty-teams/promptframe-creation.git
-cd promptframe-creation
 npm ci --ignore-scripts
-node bin/promptframe-creation.mjs setup --endpoint <platform-api-base>
+npm run build
+node bin/promptframe-creation.mjs connect --endpoint <Studio提供的API地址>
+npm test
 ```
 
-API 地址由你的 Studio 提供，例如占位格式 `https://your-platform.example/api`。没有私有端点默认值。setup 会给出准确 Studio 链接并尝试打开浏览器；浏览器不能打开时手动访问该链接，完成平台登录，在作品操作中选择“连接外部 Agent”。生成或复制创作 Token 后，在 setup 终端隐藏输入。自动化可用 `--token-stdin` 从安全输入管道提供，不能放入命令参数或源码。
-
-已存有效凭据时重复 setup 会直接复用，不调用轮换 API。撤销或过期后，先在 Studio 处理，再显式 `setup --replace` 输入新 Token。平台本人审批和账号/项目权限仍生效；这是独立 Bearer 创作授权，不是 `codex mcp login`。
-
-凭据保存在用户配置目录的 `promptframe-creation/credentials.json`，目录0700、文件0600。可用 `PROMPTFRAME_CREATION_CONFIG` 指定独立安全文件；仓库和 Codex 配置只引用桥，不含 Token。setup 不修改个人 Coding Agent 配置或登录。
-
-## 平台地址与环境
-
-首次连接时，由用户提供所用 Studio 的 API 地址，传给 `setup --endpoint`。GitHub 仓库地址不是平台地址；客户端不会根据当前工作目录或 Token 猜测域名，也没有内置生产地址。传入的 `/api` 会规范化为 `/api/mcp`，也可直接提供 `/api/mcp`。
-
-本地同机接入可使用 `http://localhost:3500/api`；正式服务使用该部署提供的 HTTPS API 地址。这里的 localhost 指桥进程所在的运行环境，容器或远程客户端需使用其实际可达地址。地址与该环境生成的 Token 一起保存在同一份安全配置文件中。
-
-本地与生产使用不同的 `PROMPTFRAME_CREATION_CONFIG` 文件。已有文件绑定另一地址时，setup 会要求独立配置，不会覆盖切端。启动 Codex/桥时固定使用对应配置路径；运行中的桥不会因修改环境变量或配置文件而热切换，切换后需重启对应连接。当前没有内置多环境选择命令。
+开发构建显式产生自包含运行文件。`npm pack --ignore-scripts` 的发行准备由[发布脚本](docs/releasing.md)显式执行构建，不依赖宿主执行安装脚本。不要把源码仓或其node_modules复制给最终用户。
 
 ## 用组件丰富视频内容
 
@@ -69,48 +54,12 @@ API 地址由你的 Studio 提供，例如占位格式 `https://your-platform.ex
 
 组件 CLI 的端点由该部署提供，按 CLI 的登录与项目说明单独配置；不要将创作 MCP 地址直接当作 CLI 地址。组件上传授权与本仓创作 Token 用途不同。可复用组件遵循 `marketplace_authoring`，仅供当前项目的组件遵循 `project_private_generation`，并以平台实际授权为准；本地写代码或上传组件不会代替平台的制作确认。
 
-## 连接 Codex
+## 创作与宿主身份
 
-完成上面的 `npm ci --ignore-scripts` 和 setup 后，选择以下一种接法。同一客户端不要同时启用两份桥，以免显示重复工具。
+video-creation Skill 先动态发现平台目录/schema，选择用户有权的作品和能力；已有作品需正常申请编辑权并由本人在 Studio 确认。新建空作品沿明确用户意图，不覆盖第一作品。已接受异步任务持久存在，客户端停止等待不取消订单；结果未知先观察原 task，不重派生成或补造回执。
 
-Codex CLI 可显式添加 stdio 桥（把 `<checkout>` 换成此仓的绝对路径）：
+受支持 Codex 在 MCP 元数据中自动提供 threadId。桥与平台结合环境、账号、安装和该thread区分编辑者；缺失身份拒绝新建/接管/新写，不退回共享编辑身份。原已接受任务的只读观察仍保留。桥管理本线程已批准的controlVersion，作品expectedRevision仍按原并发合同，不替模型追最新内容版本。四个内置只读候选使用真实同scope版本，服务仍以当前registry及白名单双核；不借读权缓存成编辑权。
 
-```bash
-codex mcp add promptframe -- node <checkout>/bin/promptframe-creation.mjs bridge
-codex mcp get promptframe
-node bin/promptframe-creation.mjs status
-```
+Token是独立创作授权，不是codex mcp login。已有有效文件会复用；网络失败不自动替换。外部未上报的聊天、本地文件和推理不在平台历史里，也不冒作平台使用费。其它宿主、原生Windows权限和官方插件市场上架各自按实际证据报告。
 
-使用独立配置文件或自定义 XDG 配置目录时，在该条 `mcp_servers.promptframe` 配置中加 `env_vars = ["PROMPTFRAME_CREATION_CONFIG", "XDG_CONFIG_HOME"]`，让 Codex 只向桥转发这两个路径变量；参见 [Codex 的 stdio 环境配置](https://learn.chatgpt.com/docs/extend/mcp#stdio-servers)。默认安全目录不需要这一步。这里传递的是路径，Token 仍只在安全文件中。
-
-也可通过本仓的本地插件目录安装，配套加载 `video-creation` Skill 和 stdio 桥。在支持以下命令的 Codex CLI 中运行：
-
-```bash
-codex plugin marketplace add <checkout>
-codex plugin add promptframe-creation@promptframe-creation-local
-codex plugin list
-```
-
-支持本地插件的 ChatGPT 桌面端可按 [OpenAI 的本地目录安装说明](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)，选择 `PromptFrame Creation (local)` 后安装插件。目录入口是本仓 `.agents/plugins/marketplace.json`，相对路径从 checkout 根解析；插件由 `.codex-plugin/plugin.json` 声明。不同客户端版本的安装入口可能不同，以该版本的命令帮助和官方说明为准。
-
-先安装依赖，再安装插件：本地目录会复制插件到客户端缓存，当前源码桥需要一起带入 `npm ci` 生成的 `node_modules`。只复制 manifest 或尚未安装依赖的源码目录，会缺少运行依赖。更新 checkout 后再次运行 `npm ci --ignore-scripts`，按客户端的卸载、重装流程刷新缓存，并重启客户端；仅修改源码不代表缓存已更新。普通 npm 安装会补运行依赖；Codex 的 npm 来源插件安装需单独验证解包产物的依赖闭包，不能据此源码安装步骤认定冷安装已通过。
-
-桥使用 `cwd: "."` 从已安装的插件根目录启动，脚本参数是相对路径；该路径解析由 [Codex 的插件配置实现](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/codex-mcp/src/plugin_config.rs)提供。凭据继续从用户安全配置目录读取，既不打进插件，也不写入 Codex 配置。插件会转发 `PROMPTFRAME_CREATION_CONFIG` 和 `XDG_CONFIG_HOME` 两个路径变量，需让启动 Codex 的进程继承 setup 时的值。安装后确认桥已连接、能读取平台工具，再使用 `video-creation`；插件安装成功本身不代表平台授权或创作成功。npm 基础包已发行；官方插件目录上架、npm 来源插件注册与冷安装需分别验证，本节不声明这些结果。
-
-卸载插件可用该客户端的卸载入口，支持时也可运行 `codex plugin remove promptframe-creation@promptframe-creation-local`；显式添加的桥则使用 `codex mcp remove promptframe`。这只移除客户端接线，不撤销平台 Token 或取消已接受任务。需要撤销创作授权时，仍由本人在 Studio 处理。
-
-开始前读取平台当前项目、作品、编辑权及业务工具 schema。已有作品需本人在 Studio 确认接管；首次制作也由平台本人确认。已接受的异步工具返回持久 task，客户端停止等待不取消订单。网络结果未知时查原 task 或用相同幂等键重试。本人可随时接回网页，原费用与期限保持。
-
-以下描述当前源码的宿主接线；已发行 `0.1.1` 固定包仍按上方基础版说明使用。支持的 Codex 宿主在每次 MCP 调用的元数据中自动提供 `threadId`。桥将它与当前环境、账号和安装身份交给平台区分外部编辑者；不要求模型填身份字段。缺失或格式错误时，新建、接管及新写入会明确拒绝，不退回多个聊天共用的编辑身份；原已接受任务的只读查询保留。其它宿主及旧版本需要独立验证，不能仅凭 MCP 连通宣称会话隔离已支持。
-
-桥自动携带本线程当前已获批准的 `controlVersion`，工具目录不向模型要求该参数。作品的 `expectedRevision` 仍沿原并发合同；桥不替模型填最新内容版本。旧共享安装的作品也不会被升级后的第一个聊天自动取得，仍须正常申请或从 Studio 接回。运行中的桥固定使用启动时的环境和凭据，升级不轮换 Token。
-
-外部未上报的聊天、思考和本地文件不在平台历史里。Skill 引导先复用、再用自己的能力制作并上传 ready 素材；外部自费推理与素材不冒作平台使用费。
-
-```bash
-npm test
-```
-
-## 维护与发行
-
-GitHub Actions 检查 Node 20/24、包内容和隔离安装。npm 发布使用独立版本及 GitHub OIDC，配置和操作见[发布手册](docs/releasing.md)。手工运行发布工作流只做检查；正式发行需要匹配的版本标签。首次包初始化与 npm 信任绑定完成后，后续版本由工作流自动发布。
+GitHub Actions沿独立版本和既有OIDC流程发行；普通main只跑CI。包/lock/plugin版本一致，正式新版本用新的creation-v标签，不覆盖或重发0.1.1。详见[发布手册](docs/releasing.md)。

@@ -1,6 +1,6 @@
 {
   "name": "@promptframe/creation",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": false,
   "description": "PromptFrame video creation Skill, Codex plugin and MCP client bridge.",
   "repository": {
@@ -9,6 +9,7 @@
   },
   "files": [
     "bin/",
+    "dist/",
     "lib/",
     "skills/",
     "docs/",
@@ -29,9 +30,11 @@
     "promptframe-creation": "bin/promptframe-creation.mjs"
   },
   "scripts": {
-    "test": "node --test --test-concurrency=1 test/*.test.mjs"
+    "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs",
+    "build": "node scripts/build-runtime.mjs"
   },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "1.32.1"
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "esbuild": "0.27.7"
   }
 }

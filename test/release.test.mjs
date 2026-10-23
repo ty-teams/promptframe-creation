@@ -41,7 +41,8 @@ test("the packed artifact preserves hidden plugin entries and rejects private fi
     await assert.rejects(verify(directory), /artifact_binding_mismatch/);
     const required = ["package.json", "README.md", "LICENSE", "bin/promptframe-creation.mjs",
       "lib/credentials.mjs", "lib/connection.mjs", "skills/video-creation/SKILL.md",
-      ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json"];
+      ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json",
+      "dist/cli.mjs","dist/THIRD_PARTY_NOTICES.txt","skills/creation-setup/SKILL.md"];
     assert.throws(() => validateFiles(required.slice(1)), /package_file_missing/);
     for (const name of ["credentials.json", "lib/credentials.json", "docs/.env", "test/private.mjs", "lib/../private.mjs"])
       assert.throws(() => validateFiles([...required, name]), /package_file_forbidden/);

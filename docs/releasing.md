@@ -19,7 +19,7 @@ node scripts/package-release.mjs smoke /tmp/creation-package
 
 现有 `smoke` 明确执行普通 `npm install`，由 npm 补齐 `package.json.dependencies` 后运行 CLI。Codex 的 npm 来源插件安装在已核[官方实现](https://github.com/openai/codex/blob/de06fd0be4f465bc28c3111bdadaabda5dfdebcd/codex-rs/core-plugins/src/npm_source.rs)中使用 `npm pack --ignore-scripts` 后解包，不执行相同的依赖安装步骤。
 
-当前桥顶层导入 MCP SDK，发布包未携带 node_modules，因此这两条安装路径需要独立核实。交付“从目录安装插件即可运行”时，应先提供包含必要依赖的桥产物，或明确交付并验证完整依赖；不能依赖发布后 lifecycle script、开发者已有 node_modules 或仅以 `--help` 普通安装测试冒宿主冷安装通过。具体源码与验收区分见[开发说明](development.md)。本说明只校准验证范围，不声明已实现该构建产物。
+0.2.0由`build-runtime.mjs`显式生成自包含运行文件，SDK为构建/测试依赖；`pack`先构建再按既有ignore-scripts打包。包必须含dist运行文件/许可证、两个Skill及插件入口，不能依赖安装后脚本。CI同时核纯解包运行；真实Codex npm来源安装、Skill发现和MCP启动仍分别记录，不用普通npm install smoke替代。用户级安装见[安装说明](installing.md)。
 
 ## 一次性发布配置
 
@@ -44,7 +44,7 @@ GitHub 仓库创建 Environment `npm-production`，部署规则只允许 `creati
 
 在 GitHub Actions 手工运行 **Publish Creation** 是无发布的检查：测试、打包、隔离安装并保存7天artifact。只有 `creation-v<version>` 标签的 push 能进入正式发布，手工运行不会发布 npm。
 
-正式发行前以一个正常提交完成：`private: false`，同步 package.json、package-lock.json及插件manifest版本，并验证当前版本所承诺的功能。当前流程接受稳定 `X.Y.Z` 版本。将该提交合入 main，再创建匹配标签，例如 `creation-v0.1.1`；无需为测试这套工作流提前推正式标签。
+正式发行前以一个正常提交完成：`private: false`，同步 package.json、package-lock.json、插件manifest、npm目录source.version及lib/version.mjs中的CLIENT_VERSION，并验证当前版本所承诺的功能。当前流程接受稳定 `X.Y.Z` 版本。将该提交合入 main，再创建匹配标签，例如 `creation-v0.1.1`；无需为测试这套工作流提前推正式标签。
 
 正式tag必须属于 main 历史。打包job没有OIDC权限；通过检查的同一个tgz及manifest传给独立publish job，后者才取得 `id-token: write`。publish job使用Node24自带兼容npm，通过OIDC向官方registry发布public包，禁用脚本并生成provenance。源码commit、包/lock/插件版本、tag及SHA-512 integrity必须一致；不在发布时重新打包。
 
