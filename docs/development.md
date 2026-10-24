@@ -31,7 +31,7 @@
 
 源码经 GitHub Actions 打包发行到 npm；插件目录记录包名/版本或源码位置。安装后，Codex 加载本地副本并按配置启动 Node 桥；桥通过 stdio 接收调用，读取独立安全配置，再通过 HTTPS MCP 连接所选平台。GitHub、npm 与目录索引负责获取版本，不进入正常工具调用链。Token 不进入源码、插件包或命令参数。
 
-0.2.2公开目录固定npm来源；`connect`复用来源和缓存定义可核的已启用官方npm插件；尚未注册时才准备用户级受管版本。受管身份按installation记录和原MCP定义核实，允许安装器Node路径变化，不将未知同名手工入口当作自身安装。`scripts/build-runtime.mjs`显式bundle MCP SDK及必要依赖，拒绝除Node builtins之外的外部import并附第三方许可证。npm_source仍只pack/unpack，不执行npm install；因此`test/package-runtime.test.mjs`从无node_modules解包核可运行。宿主注册/实际Skill及MCP启动另核，普通npm install不代替。
+当前公开目录固定npm来源；`connect`复用来源和缓存定义可核的已启用官方npm插件；尚未注册时才准备用户级受管版本。受管身份按installation记录和原MCP定义核实，允许安装器Node路径变化，不将未知同名手工入口当作自身安装。`scripts/build-runtime.mjs`显式bundle MCP SDK及必要依赖，拒绝除Node builtins之外的外部import并附第三方许可证。npm_source仍只pack/unpack，不执行npm install；因此`test/package-runtime.test.mjs`从无node_modules解包核可运行。宿主注册/实际Skill及MCP启动另核，普通npm install不代替。
 
 ## 相称验证
 
@@ -44,3 +44,5 @@
 ## 公开范围
 
 使用说明保持公开且可移植。平台私有配置、真实端点默认值、用户样本、Token、内部协作材料和业务权限实现不进入本仓。组件创作需要的工具按 README 指向独立 authoring 仓；不在本仓维护第二套组件 CLI 参数手册或四包发行流程。
+
+安装器按 connect 的固定目标版本比较实际安装：同版复用、更新版不降级、受管旧版准备独立目录。官方 npm 插件旧版先返回明确的待升级错误：Codex 0.160 的升级会删除旧缓存，不能假称能保护其他桥并自动升级。受管与官方复用均实际检查启动 Node 与包版本。安装结果新增 requestedVersion/versionStatus；安全错误只输出本地构造的版本、动作和指引，不输出宿主原始错误、环境或凭据。

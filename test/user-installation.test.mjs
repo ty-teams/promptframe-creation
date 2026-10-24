@@ -8,6 +8,7 @@ import {createHash} from 'node:crypto';
 import {installForUser,profileCredentialsPath} from '../lib/user-installation.mjs';
 
 const source=fileURLToPath(new URL('..',import.meta.url));
+const sourceVersion=JSON.parse(await readFile(path.join(source,'package.json'),'utf8')).version;
 const json=async f=>JSON.parse(await readFile(f,'utf8'));
 async function fixture(){
  const root=await mkdtemp(path.join(os.tmpdir(),'creation-user-install-'));
@@ -82,7 +83,8 @@ test('managed ownership follows the recorded executable rather than the current 
  const f=await fixture();try{
   const opts={sourceRoot:source,env:f.env,runCodex:f.runCodex,checkRuntime:f.checkRuntime};
   const old=await installForUser(opts),file=path.join(old.versionRoot,'.mcp.json');
-  const m=await json(file);Object.values(m.mcpServers)[0].command='/previous-supported-node/bin/node';
+  const m=await json(file);const oldNode=path.join(f.root,'previous-node');await symlink(process.execPath,oldNode);
+  Object.values(m.mcpServers)[0].command=oldNode;
   await writeFile(file,JSON.stringify(m));
   const readyFile=path.join(old.versionRoot,'installation.json'),ready=await json(readyFile),body=await readFile(file);
   Object.assign(ready.files.find(f=>f.path==='.mcp.json'),{bytes:body.length,sha256:createHash('sha256').update(body).digest('hex')});
@@ -122,5 +124,85 @@ test('incomplete packages, same-version replacement, symlinks and old hosts neve
   await assert.rejects(installForUser({...opts,sourceRoot:clone}),/package_file_invalid/);
   await assert.rejects(installForUser({...opts,runCodex:async()=> 'codex-cli 0.100.0'}),/codex_0160_required/);
   assert.equal((await json(old.currentFile)).version,old.version);
+ }finally{await f.dispose();}
+});
+
+async function copyVersion(root,version){
+ await mkdir(root,{recursive:true});
+ for(const n of ['package.json','README.md','LICENSE','bin','dist','lib','skills','docs','.codex-plugin','.mcp.json'])
+  await cp(path.join(source,n),path.join(root,n),{recursive:true});
+ for(const file of ['package.json','.codex-plugin/plugin.json']){
+  const p=path.join(root,file),x=await json(p);x.version=version;await writeFile(p,JSON.stringify(x));
+ }
+ // An independent fixture CLI makes the installed-runtime assertion real without
+ // constructing another release. No platform/network or credential is needed.
+ await writeFile(path.join(root,'bin/promptframe-creation.mjs'),`process.stdout.write('${version}\\n')`);
+ return root;
+}
+
+test('older npm plugin reports actionable pending upgrade, preserves registration/cache/credentials and never invokes destructive host upgrade',async()=>{
+ const f=await fixture();try{
+  f.env.CODEX_HOME=path.join(f.root,'codex');
+  const version='0.1.1',cached=await copyVersion(path.join(f.env.CODEX_HOME,'plugins/cache/official/promptframe-creation',version),version);
+  const official={pluginId:'promptframe-creation@official',name:'promptframe-creation',marketplaceName:'official',version,enabled:true,
+   source:{source:'npm',package:'@promptframe/creation',version,registry:'https://registry.npmjs.org'}};
+  f.setInstalled([official]);
+  f.setMcp([{name:'promptframe',enabled:true,transport:{type:'stdio',command:'node',args:['bin/promptframe-creation.mjs','bridge'],cwd:cached,env_vars:['PROMPTFRAME_CREATION_CONFIG','XDG_CONFIG_HOME']}}]);
+  const config=profileCredentialsPath('default',f.env);await mkdir(path.dirname(config),{recursive:true});await writeFile(config,'fixture credential retained');
+  const before=await readFile(path.join(cached,'bin/promptframe-creation.mjs'));
+  await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),e=>{
+   assert.equal(e.message,'installation.npm_plugin_upgrade_required');assert.equal(e.details.installedVersion,version);
+   assert.equal(e.details.requestedVersion,sourceVersion);
+   assert.equal(e.details.action,'upgrade_in_codex_after_active_bridges_finish');return true;
+  });
+  assert.equal(f.counts().adds,0);assert((await readFile(path.join(cached,'bin/promptframe-creation.mjs'))).equals(before));
+  assert.equal(await readFile(config,'utf8'),'fixture credential retained');
+ }finally{await f.dispose();}
+});
+
+test('newer official npm version is retained without host mutations',async()=>{
+ const f=await fixture();try{
+  f.env.CODEX_HOME=path.join(f.root,'codex');
+  const version='9.0.0',cached=await copyVersion(path.join(f.env.CODEX_HOME,'plugins/cache/official/promptframe-creation',version),version);
+  f.setInstalled([{pluginId:'promptframe-creation@official',name:'promptframe-creation',marketplaceName:'official',version,enabled:true,
+   source:{source:'npm',package:'@promptframe/creation',version,registry:'https://registry.npmjs.org'}}]);
+  f.setMcp([{name:'promptframe',enabled:true,transport:{type:'stdio',command:'node',args:['bin/promptframe-creation.mjs','bridge'],cwd:cached,env_vars:['PROMPTFRAME_CREATION_CONFIG','XDG_CONFIG_HOME']}}]);
+  const result=await installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex});
+  assert.equal(result.version,version);assert.equal(result.versionStatus,'newer_retained');assert.equal(f.counts().adds,0);
+ }finally{await f.dispose();}
+});
+
+test('managed installs do not downgrade even when an older complete package runs connect',async()=>{
+ const f=await fixture();try{
+  const opts={sourceRoot:source,env:f.env,runCodex:f.runCodex,checkRuntime:f.checkRuntime};
+  const current=await installForUser(opts),before=await readFile(current.currentFile);
+  const oldSource=await copyVersion(path.join(f.root,'older-source'),'0.1.0');
+  const result=await installForUser({...opts,sourceRoot:oldSource});
+  assert.equal(result.version,current.version);assert.equal(result.versionStatus,'newer_retained');
+  assert.equal(f.counts().adds,1);assert((await readFile(current.currentFile)).equals(before));
+ }finally{await f.dispose();}
+});
+
+test('missing recorded Node is explicit; restoration reuses the same files and a new version can use current Node',async()=>{
+ const f=await fixture();try{
+  const opts={sourceRoot:source,env:f.env,runCodex:f.runCodex,checkRuntime:f.checkRuntime};
+  const old=await installForUser(opts),file=path.join(old.versionRoot,'.mcp.json'),m=await json(file);
+  const missing=path.join(f.root,'removed-node');Object.values(m.mcpServers)[0].command=missing;
+  await writeFile(file,JSON.stringify(m));
+  const readyFile=path.join(old.versionRoot,'installation.json'),ready=await json(readyFile),body=await readFile(file);
+  Object.assign(ready.files.find(x=>x.path==='.mcp.json'),{bytes:body.length,sha256:createHash('sha256').update(body).digest('hex')});
+  await writeFile(readyFile,JSON.stringify(ready));
+  const before=await readFile(old.currentFile);
+  await assert.rejects(installForUser(opts),/installation.recorded_node_unavailable/);
+  assert((await readFile(old.currentFile)).equals(before));assert((await readFile(file)).equals(body));assert.equal(f.counts().adds,1);
+  await symlink(process.execPath,missing);
+  assert.equal((await installForUser(opts)).reused,true);
+  await rm(missing);
+  const next=old.version.split('.').map(Number);next[2]++;
+  const newSource=await copyVersion(path.join(f.root,'newer-source'),next.join('.'));
+  const upgraded=await installForUser({...opts,sourceRoot:newSource});
+  assert.equal(upgraded.version,next.join('.'));assert.equal(upgraded.reloadRequired,true);
+  assert.equal(Object.values((await json(path.join(upgraded.versionRoot,'.mcp.json'))).mcpServers)[0].command,process.execPath);
+  assert((await readFile(file)).equals(body));
  }finally{await f.dispose();}
 });
