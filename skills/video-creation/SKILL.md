@@ -7,7 +7,7 @@ description: 在 PromptFrame 中调研、规划、制作和接续视频，复用
 
 ## 连接与选择作品
 
-未连接时按仓库 README 运行 setup，提供用户选择的平台 API 地址。凭据只交本地 setup 的安全输入，不写聊天、源码、命令行参数或 MCP 业务参数。创作 Token 与组件上传凭据用途不同，也不是 OAuth `mcp login`。
+未连接时先按 creation-setup Skill 和 Studio 当前固定版本指引运行 `connect`，提供用户选择的平台 API 地址。`setup` 只处理凭据，不能代替插件注册。凭据只交本地连接流程的安全输入，不写聊天、源码、命令行参数或 MCP 业务参数。创作 Token 与组件上传凭据用途不同，也不是 OAuth `mcp login`。
 
 使用平台项目和作品列表选择目标。新作品使用稳定的幂等请求键；已有作品先读取最新历史、Plan、Spec、素材和在途任务，再申请编辑权，由本人在 Studio 确认。不要修改已有作品的运行时来换端。断线和思考不代表释放编辑权。
 
