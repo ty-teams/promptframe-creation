@@ -5,7 +5,7 @@
 从 Studio 的“连接与授权”复制当前环境的指引。在本机终端执行：
 
 ```bash
-npx --yes @promptframe/creation@0.2.1 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.2.2 connect --endpoint <Studio提供的API地址>
 ```
 
 `/api` 会规范化到 `/api/mcp`；也可直接提供 `/api/mcp`。保留 Studio 实际可达的 HTTPS origin，包括私有网络域名，不把远程地址替换成本机 localhost。`0.1.1` 是历史基础包；它不支持此用户级插件引导。新版本是否已发行，以 registry 的实际版本和对应固定标签为准。
@@ -21,7 +21,7 @@ npx --yes @promptframe/creation@0.2.1 connect --endpoint <Studio提供的API地�
 另一个环境或账号应由用户选择不同名称：
 
 ```bash
-npx --yes @promptframe/creation@0.2.1 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.2.2 connect --profile work-account --endpoint <另一环境API地址>
 ```
 
 命名 profile 使用独立凭据和独立插件名；新桥配置固定具体凭据文件。已有文件绑定另一 endpoint 时拒绝覆盖，运行中的桥也不会热切环境。相同 endpoint 的不同账号同样用不同 profile；不要尝试从 Token 或作品名猜账号。`--config <安全文件>` 可指定已存在的私有配置，但不得把不同环境指向同一文件。
@@ -41,3 +41,9 @@ npx --yes @promptframe/creation@0.2.1 connect --profile work-account --endpoint 
 安装不接管作品、不派发制作。让新聊天按 video-creation 读取当前项目、作品及 schema；已有作品正常申请本人确认，新建空作品沿用户意图。工具调用的宿主 thread 身份由 Codex 自动提供，模型不用填写身份、权限或控制版本。对原 task 的观察与新写入分开：不兼容版本的新写入应升级后再做，原任务不重派、不丢失。
 
 组件复用通过平台目录和 schema；确需开发组件时使用 README 指向的独立 authoring Skill/CLI。MCP 连接不要求安装组件四包。
+
+## 已有官方插件与 Node 路径变更
+
+已通过官方 npm 来源安装并启用的插件，`connect`核来源、缓存版本与实际MCP定义后复用现有入口和配置，不另注册第二个插件。未知手工MCP仍需明确核对；自定义配置或独立账号使用显式profile，不能借官方插件名切换其环境。
+
+受管入口按原安装记录核身份，不以当前Node可执行文件路径认领。相同版本继续使用已记录的Node路径；换Node后运行connect可复用原安装，需保留该旧Node以供新聊天启动。后继兼容版本采用安装该版本时的Node路径，旧版本和活动桥不被覆盖或终止。

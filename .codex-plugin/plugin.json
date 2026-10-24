@@ -1,6 +1,6 @@
 {
   "name": "promptframe-creation",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "使用自己的推理，通过 PromptFrame 的共用工具、作品和任务创作视频。",
   "author": {
     "name": "PromptFrame"

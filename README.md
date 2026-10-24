@@ -7,7 +7,7 @@
 需要 Node.js 20+ 及支持插件的 Codex（最低0.160.0）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
 
 ```bash
-npx --yes @promptframe/creation@0.2.1 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.2.2 connect --endpoint <Studio提供的API地址>
 ```
 
 入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后按提示正常重载插件或开新聊天，确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
@@ -19,7 +19,7 @@ API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置�
 | 版本或层次 | 适用范围 |
 | --- | --- |
 | 历史 npm0.1.1 / creation-v0.1.1 | 固定3da232e267117794fcbcbb1920cbdf9f3f294c14的基础setup/status/bridge；不是此版的聊天身份和插件安装功能 |
-| 0.2.1源码与包合同 | 宿主thread隔离、桥管理控制版本、自包含运行依赖、用户级安装/两类Skill/独立profile；是否已发行以registry和固定tag为准 |
+| 0.2.2源码与包合同 | 宿主thread隔离、桥管理控制版本、自包含运行依赖、用户级安装/两类Skill/独立profile；是否已发行以registry和固定tag为准 |
 | 实际用户宿主 | 核已安装版本、Skill加载与MCP连接；源码提交或npm发行不代替宿主及完整创作验收 |
 
 公开目录 `.agents/plugins/marketplace.json` 固定 npm 包版本。用户级 connect 从当前完整包注册受管本地副本；两条路径都携带运行依赖，不要求在业务仓安装SDK。不要同时启用旧的手工MCP入口和新插件；旧入口识别与安全迁移见安装说明。
