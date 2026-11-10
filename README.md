@@ -7,12 +7,12 @@
 需要 Node.js 20+ 及支持插件的 Codex（最低0.160.0）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
 
 ```bash
-npx --yes @promptframe/creation@0.2.3 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.2.4 connect --endpoint <Studio提供的API地址>
 ```
 
 每次从 Studio 获取当前固定推荐版本；入口比较已安装版本，较新版本保留，不后台追踪 latest。入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后在同一主机开一个 **Local 新聊天**（CLI 开新 session），确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。可以选择独立的非 Git 创作目录，不需要产品源码或 Worktree；不必重新安装或获取 Token。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
 
-本分支准备 `0.2.4`；是否已发行以 registry 和固定发行标签为准，源码或候选本身不代表发行。已发行 `0.2.3` 原件保持，以上公共固定指令仍以 Studio 的实际推荐为准。安装发现、写回程未知保护和新聊天指引见[0.2.4说明](docs/releases/0.2.4.md)。
+`0.2.4` 已按固定标签发行；安装发现、写回程未知保护和新聊天指引见[0.2.4说明](docs/releases/0.2.4.md)。本分支的后继源码增加项目只读入门与 Skill 说明分流，不冒称不可变的0.2.4公共包已包含这些后继改动。源码或候选本身不代表新版本已发行；每次以 Studio 的真实固定推荐、registry 和发行标签为准，旧包及标签保留。
 
 API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置生产/私有地址。远程客户端不要改成自己的 localhost。另一个环境或账号显式使用 `--profile <名称>`；新旧桥各固定凭据路径，不热切环境。有效 Token 不因升级、新作品或接管轮换。详细安装、升级保旧、卸载和排障见[安装说明](docs/installing.md)。Linux、WSL、macOS 使用0700目录/0600凭据；原生Windows ACL尚未验证。
 

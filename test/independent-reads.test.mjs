@@ -5,9 +5,9 @@ import {createHostCallBridge} from '../lib/host-context.mjs';
 const base={_meta:{threadId:'01a10000-0000-7000-8000-000000000001'},
   arguments:{projectId:'own-project',sessionId:'own-work'}};
 const result=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
-const reads=['read_spec','read_creative_plan','get_creative_plan','list_assets'];
+const reads=['read_spec','read_creative_plan','get_creative_plan','list_assets','skills_list','read_skill','skill_view'];
 
-test('four independent reads use the server-observed version under Web, other-thread and own control without borrowing write authority',async()=>{
+test('supported independent reads use the server-observed version under Web, other-thread and own control without borrowing write authority',async()=>{
   const outcomes=[];
   for(const editor of [{kind:'web'},{kind:'client',isCurrentClient:false},{kind:'client',isCurrentClient:true}]){
     for(const tool of reads){
@@ -31,6 +31,20 @@ test('four independent reads use the server-observed version under Web, other-th
     }
   }
   assert.deepEqual(outcomes.filter(row=>row.error),[],JSON.stringify(outcomes));
+});
+
+test('project onboarding needs no work or host editor; Skill use cannot borrow a read version',async()=>{
+  const calls=[],bridge=createHostCallBridge({callTool:async params=>{
+    calls.push(params);return result(params.name==='platform_read_session'
+      ?{sessionId:'own-work',control:{controlVersion:3,editor:{kind:'web'}}}:{baseline:{version:'own'}});
+  }});
+  const read=await bridge.call({name:'platform_read_onboarding',arguments:{projectId:'own-project'}});
+  assert.ok(read);assert.deepEqual(calls.map(call=>call.name),['platform_read_onboarding']);
+  for(const usage of ['use','invalid',{},null]){
+    await assert.rejects(bridge.call({...base,name:'platform_call_tool',arguments:{...base.arguments,
+      tool:'skill_view',arguments:{usage},expectedRevision:1,idempotencyKey:'own-use'}}),/creation.editor_not_current/);
+  }
+  assert.equal(calls.filter(call=>call.name==='platform_call_tool').length,0);
 });
 
 test('independent reads reject forged versions or a mismatched/missing control response, and preserve an upstream refusal',async()=>{
