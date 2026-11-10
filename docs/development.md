@@ -17,6 +17,10 @@
 | 插件目录索引 | `.agents/plugins/marketplace.json` |
 | 发行内容、版本约束与同包核验 | `scripts/package-release.mjs`、`.github/workflows/ci.yml`、`.github/workflows/publish.yml` |
 
+## 事项对应的 npm 发行
+
+已授权 BUG/REQ 代码修改默认包含对应 npm 包在受影响测试及相应验收通过后的正常发行，不再逐版本或 tag 索批；用户明确 hold 时保持暂停。按[发布手册](releasing.md)使用同一受检 tgz、既有 OIDC 和官方 registry 回读，不覆盖旧版本。纯规则或文档变更不制造空版本；平台环境部署、个人宿主安装和插件市场上架不随 npm 发行扩大授权。
+
 ## 三种版本分别核实
 
 1. 当前工作分支的源码 ref 和未提交差额。
