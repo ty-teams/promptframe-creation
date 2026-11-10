@@ -8,7 +8,7 @@ description: 安装、连接或升级 PromptFrame Creation 的 Codex 插件，�
 使用 Studio“连接与授权”提供的完整 API 地址及公开安装入口。保留用户当前环境的 origin 和 `/api`，不替换成 localhost，不从旧聊天猜另一账号或环境。
 
 <!-- creation-install-command -->
-在用户本机终端运行 `npx --yes @promptframe/creation@0.2.6 connect --endpoint <Studio提供的API地址>`。需要隔离另一个环境或账号时显式加 `--profile <用户选择的名称>`；正在运行的桥不会切换。此命令管理用户级版本和 Codex 插件，不向当前项目安装依赖。优先使用 Studio 当前提供的固定推荐版本；每次重新进入此入口比较已安装版本，不后台追踪 latest，也不把旧聊天里的命令当最新版本。已安装更新版不默认降级。
+在用户本机终端运行 `npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地址>`。需要隔离另一个环境或账号时显式加 `--profile <用户选择的名称>`；正在运行的桥不会切换。此命令管理用户级版本和 Codex 插件，不向当前项目安装依赖。优先使用 Studio 当前提供的固定推荐版本；每次重新进入此入口比较已安装版本，不后台追踪 latest，也不把旧聊天里的命令当最新版本。已安装更新版不默认降级。
 <!-- /creation-install-command -->
 
 命令会复用并验证有效凭据。首次授权或明确更换已失效凭据时，由用户在 Studio 登录并在终端的不回显输入框提供 Token；不要要求用户把 Token 粘进聊天，也不要把它写进命令参数、URL或日志。网络失败不等于授权失效，不自动轮换或覆盖凭据。

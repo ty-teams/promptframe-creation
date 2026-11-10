@@ -6,7 +6,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.2.6 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -28,7 +28,7 @@ npx --yes @promptframe/creation@0.2.6 connect --endpoint <Studio提供的API地�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.2.6 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.2.7 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 
