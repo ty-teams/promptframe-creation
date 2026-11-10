@@ -12,27 +12,35 @@ const sourceVersion=JSON.parse(await readFile(path.join(source,'package.json'),'
 const json=async f=>JSON.parse(await readFile(f,'utf8'));
 async function fixture(){
  const root=await mkdtemp(path.join(os.tmpdir(),'creation-user-install-'));
- const env={...process.env,XDG_DATA_HOME:path.join(root,'data'),XDG_CONFIG_HOME:path.join(root,'config')};delete env.PROMPTFRAME_CREATION_CONFIG;
- let installed=[],catalogRoot,adds=0,checks=0,fail=false,extra=[];
+ const env={...process.env,CODEX_HOME:path.join(root,'codex'),XDG_DATA_HOME:path.join(root,'data'),XDG_CONFIG_HOME:path.join(root,'config')};delete env.PROMPTFRAME_CREATION_CONFIG;
+ let installed=[],catalogRoot,adds=0,checks=0,fail=false,loseAck=false,extra=[];const catalogs=new Map();
  const runCodex=async args=>{
   if(args[0]==='--version')return 'codex-cli 0.160.0';
   if(args.join(' ')==='mcp list --json'){
    if(extra.length)return JSON.stringify(extra);
    if(!installed.length)return '[]';
-   const m=await json(path.join(installed[0].source.path,'.mcp.json'));
-   return JSON.stringify(Object.entries(m.mcpServers).map(([name,server])=>({name,transport:{type:'stdio',...server}})));
+   const rows=[];for(const p of installed){const m=await json(path.join(p.source.path,'.mcp.json'));
+    rows.push(...Object.entries(m.mcpServers).map(([name,server])=>({name,transport:{type:'stdio',...server}})));}return JSON.stringify(rows);
   }
-  if(args[1]==='list')return JSON.stringify({installed});
-  if(args[1]==='marketplace'){catalogRoot=args[3];return '{}';}
+  if(args.slice(0,3).join(' ')==='plugin marketplace list'){
+   for(const p of installed.filter(x=>x.source?.source==='npm')){
+    const dir=path.join(root,'catalogs',p.marketplaceName);await mkdir(path.join(dir,'.agents/plugins'),{recursive:true});
+    await writeFile(path.join(dir,'.agents/plugins/marketplace.json'),JSON.stringify({plugins:[{name:p.name,source:p.source}]}));catalogs.set(p.marketplaceName,dir);
+   }
+   return JSON.stringify({marketplaces:[...catalogs].map(([name,root])=>({name,root}))});
+  }
+  if(args[1]==='list'){assert(args.includes('--marketplace'));return JSON.stringify({installed:installed.filter(x=>x.pluginId.endsWith('@'+args[args.indexOf('--marketplace')+1]))});}
+  if(args[1]==='marketplace'){catalogRoot=args[3];catalogs.set((await json(path.join(catalogRoot,'.agents/plugins/marketplace.json'))).name,catalogRoot);return '{}';}
   if(args[1]==='add'){
    adds++;if(fail)throw Error('fixture_registration_rejected');
    const c=await json(path.join(catalogRoot,'.agents/plugins/marketplace.json')),p=c.plugins[0];
    const dir=path.join(catalogRoot,p.source.path),manifest=await json(path.join(dir,'.codex-plugin/plugin.json'));
-   installed=[{pluginId:args[2],version:manifest.version,enabled:true,installed:true,source:{source:'local',path:dir}}];
+   installed=installed.filter(x=>x.pluginId!==args[2]);installed.push({pluginId:args[2],version:manifest.version,enabled:true,installed:true,source:{source:'local',path:dir}});
+   if(loseAck){loseAck=false;throw Error('synthetic sensitive child error after commit');}
    return JSON.stringify({pluginId:args[2],version:manifest.version,installedPath:dir});
   }throw Error('unexpected_codex_call');
  };
- return{root,env,runCodex,checkRuntime:async()=>{checks++;},counts:()=>({adds,checks}),setFail:x=>fail=x,
+ return{root,env,runCodex,checkRuntime:async()=>{checks++;},counts:()=>({adds,checks}),setFail:x=>fail=x,setLoseAck:x=>loseAck=x,
   setInstalled:x=>installed=x,setMcp:x=>extra=x,
   dispose:()=>rm(root,{recursive:true,force:true})};
 }
@@ -51,6 +59,68 @@ test('ten repeats and two concurrent entries reuse one complete registered versi
   assert(path.isAbsolute(server.args[0]));
   assert.equal((await json(a.currentFile)).version,a.version);
   await assert.rejects(stat(profileCredentialsPath('default',f.env)),{code:'ENOENT'});
+ }finally{await f.dispose();}
+});
+
+test('committed add with lost ACK is observed by exact pending identity; an uncommitted unknown is never re-added',async()=>{
+ for(const committed of [true,false]){
+  const f=await fixture();try{
+   const opts={sourceRoot:source,env:f.env,runCodex:f.runCodex,checkRuntime:f.checkRuntime};
+   if(committed)f.setLoseAck(true);else f.setFail(true);
+   await assert.rejects(installForUser(opts),/registration_unconfirmed_keep_existing/);assert.equal(f.counts().adds,1);
+   f.setFail(false);
+   if(committed){assert.equal((await installForUser(opts)).registered,true);}
+   else await assert.rejects(installForUser(opts),e=>e.message==='installation.registration_unconfirmed_keep_existing'&&e.details.action==='inspect_same_registration_no_second_add');
+   assert.equal(f.counts().adds,1);
+  }finally{await f.dispose();}
+ }
+});
+
+test('all related official marketplaces are checked; two enabled entries require review without a new registration',async()=>{
+ const f=await fixture();try{
+  const rows=[];for(const name of ['official-one','official-two']){
+   const cached=await copyVersion(path.join(f.env.CODEX_HOME,'plugins/cache',name,'promptframe-creation',sourceVersion),sourceVersion);
+   rows.push({pluginId:'promptframe-creation@'+name,name:'promptframe-creation',marketplaceName:name,version:sourceVersion,enabled:true,
+    source:{source:'npm',package:'@promptframe/creation',version:sourceVersion,registry:'https://registry.npmjs.org'}});
+   f.setMcp([{name:'promptframe',enabled:true,transport:{type:'stdio',command:'node',args:['bin/promptframe-creation.mjs','bridge'],cwd:cached,env_vars:['PROMPTFRAME_CREATION_CONFIG','XDG_CONFIG_HOME']}}]);
+  }
+  f.setInstalled(rows);await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),/existing_registration_requires_review/);
+  assert.equal(f.counts().adds,0);
+ }finally{await f.dispose();}
+});
+
+test('an unknown or disabled related registration is not mistaken for an uninstalled plugin',async()=>{
+ const f=await fixture();try{
+  for(const enabled of [false,true]){
+   f.setInstalled([{pluginId:'promptframe-creation@foreign',name:'promptframe-creation',marketplaceName:'foreign',version:sourceVersion,enabled,
+    source:{source:'npm',package:'@promptframe/creation',version:sourceVersion,registry:'https://untrusted.invalid'}}]);
+   f.setMcp([{name:'unrelated',transport:{type:'stdio',command:'node',args:[],cwd:f.root}}]);
+   await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),/existing_registration_requires_review/);
+   assert.equal(f.counts().adds,0);
+  }
+ }finally{await f.dispose();}
+});
+
+test('invalid JSON and unavailable local catalog stay unknown and never register or leak child data',async()=>{
+ const f=await fixture();try{
+  for(const value of ['token=synthetic private malformed JSON',JSON.stringify({marketplaces:[{name:'related',root:path.join(f.root,'missing')} ]})]){
+   await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:args=>args[0]==='--version'?'codex-cli 0.160.0':Promise.resolve(value)}),e=>{
+    assert(['installation.command_json_unconfirmed','installation.local_catalog_unconfirmed'].includes(e.message));
+    assert(!JSON.stringify({message:e.message,details:e.details}).includes('token='));return true;
+   });
+  }
+  assert.equal(f.counts().adds,0);
+ }finally{await f.dispose();}
+});
+
+test('registration post-read requires the exact effective MCP transport before changing current',async()=>{
+ const f=await fixture();try{
+  let reads=0;const runCodex=args=>{
+   if(args.join(' ')==='mcp list --json'&&++reads>1)return JSON.stringify([{name:'promptframe',enabled:true,transport:{type:'stdio',command:'unknown-wrapper',args:[],cwd:f.root}}]);
+   return f.runCodex(args);
+  };
+  await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex,checkRuntime:f.checkRuntime}),/registration_unconfirmed_keep_existing/);
+  assert.equal(f.counts().adds,1);await assert.rejects(stat(path.join(f.env.XDG_DATA_HOME,'promptframe-creation/default/current.json')),{code:'ENOENT'});
  }finally{await f.dispose();}
 });
 

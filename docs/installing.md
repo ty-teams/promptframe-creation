@@ -12,7 +12,11 @@ npx --yes @promptframe/creation@0.2.3 connect --endpoint <Studio提供的API地�
 
 首次连接由用户在 Studio 生成创作授权，在终端隐藏输入框输入 Token。自动化可从受限管道使用 `--token-stdin`，不得把 Token 放在参数、聊天、URL、业务仓或日志中。已有有效凭据直接验证复用；失败时保留原凭据，不自动撤销或轮换。仅明确替换时使用 `setup --replace`。
 
-连接入口校验完整包，把自包含运行文件、插件声明及两个 Skill 放入用户级版本目录，通过 `codex plugin marketplace add` 和 `codex plugin add` 注册并核回已启用版本。无需在当前业务仓运行 npm install，也不依赖开发者的 node_modules。目录注册成功与当前聊天已加载分别报告：首次安装或升级后正常重载插件或开新聊天，确认 creation-setup、video-creation 和 MCP 工具均可见。
+连接入口校验完整包，把自包含运行文件、插件声明及两个 Skill 放入用户级版本目录，通过 `codex plugin marketplace add` 和 `codex plugin add` 注册并核回已启用版本。无需在当前业务仓运行 npm install，也不依赖开发者的 node_modules。目录注册成功与当前聊天已加载分别报告。
+
+安装后在同一主机开一个 **Local 新聊天**；CLI 使用新 session。选择独立的非 Git 创作目录即可，不必复制产品仓或创建 Worktree，也不用重装或更换 Token。在新聊天确认 `creation-setup`、`video-creation` 两个 Skill 和 PromptFrame MCP 工具一起可用，再开始创作。现有聊天不必关闭；安装器不重启宿主或其它聊天，也不承诺能从外部 npx 强刷原 GUI 会话。[官方插件说明](https://learn.chatgpt.com/docs/plugins)要求安装后使用新聊天/新 session。
+
+安装输出分别报告插件已安装、已启用、平台凭据连接已核验；`hostMcpConnected` 与 `sessionLoaded` 在安装器中仍为 `not_verified`。当前聊天是否已加载，要由该聊天实际发现 Skill 和调用 MCP 只读工具验证。若宿主将来提供明确受支持的同会话刷新入口，也须同时核回这两类能力后才能报告加载成功。
 
 ## 环境与账号
 
@@ -32,7 +36,9 @@ npx --yes @promptframe/creation@0.2.3 connect --profile work-account --endpoint 
 
 每个 profile 的安装位于 `$XDG_DATA_HOME/promptframe-creation/<profile>`（默认用户 `.local/share`），版本在 `versions/<version>`。同版本完整内容复用，不再次下载运行依赖；两个入口串行合并。新版本先完整准备和检查，再注册并原子更新 `current.json`。旧版本及其依赖保留，不覆盖、不枚举或终止其它聊天。
 
-更新失败保留旧默认、旧文件及 Token。`registration_unconfirmed_keep_existing` 表示宿主命令结果未确认；先核 Codex 当前插件状态，不根据错误盲重发或删除缓存。普通重试会核原完整版本和实际宿主状态。只在确认本工具 `install.lock/owner.json` 的进程已退出后，才手动移除该精确安装锁并重试；活动或无法确认的进程不清锁。安装锁不决定平台编辑权。
+更新失败保留旧默认、旧文件及 Token。`registration_unconfirmed_keep_existing` 表示宿主写命令结果未确认；先核 Codex 当前插件状态，不根据错误盲重发或删除缓存。安装器在写前保存该 profile 的 `registration-pending.json`；再次 connect 只观察同一插件和版本。确认已登记则正常完成，否则保留待核状态，不自动第二次 add 或用旧版 add 作补偿。只有原宿主登记责任核清后才安排后续处理。只在确认本工具 `install.lock/owner.json` 的进程已退出后，才手动移除该精确安装锁并重试；活动或无法确认的进程不清锁。安装锁不决定平台编辑权。
+
+源码后继的安装核验读取宿主结构化本地 marketplace 索引和有界目录文件，再仅查询全部相关 marketplace；无关远端目录不进入安装必需路径。目录不可读、JSON/输出超限、查询超时不代表“未安装”。错误只报告阶段、命令种类、耗时、期限、退出码/信号及下一动作，不透传子进程 stdout/stderr、环境或凭据。此行为属于后继源码/候选，不回填已发行 0.2.3。
 
 从旧手工 `codex mcp add promptframe` 迁移时，若发现同名定义，引导会停止并给出 `legacy_mcp_entry_requires_review`，不会删除不明配置。确认它是旧的 PromptFrame 手工入口后可用 `codex mcp remove promptframe` 移除定义，再重复 connect。移除定义不取消已接受平台任务、不撤销 Token；在途桥及原结果应沿原 task 观察。
 
@@ -51,8 +57,8 @@ npx --yes @promptframe/creation@0.2.3 connect --profile work-account --endpoint 
 Codex CLI 0.160.0 的 `plugin add` 升级 npm 插件会移除旧缓存，当前没有可保留旧缓存的升级选项。因此不能在不知道其他聊天是否仍用旧桥时自动执行该命令。处理步骤：
 
 1. 等使用该插件的活动聊天和桥结束。平台已受理的媒体任务保持原 task，升级后继续查询，不重派。
-2. 用 `codex plugin list --json` 和 `codex plugin marketplace list --json` 确认原插件 ID、目录来源和当前版本。
+2. 用 `codex plugin marketplace list --json` 和 `codex plugin list --marketplace <原准确目录名> --json` 确认原插件 ID、目录来源和当前版本。
 3. Git 来源目录使用 `codex plugin marketplace upgrade <原目录名> --json` 更新目录；本地目录由其维护者更新到包含目标 npm 版本的目录。不要新注册一个同名插件来绕过升级。
-4. 确认目录中的版本是目标版本后，执行 `codex plugin add <原插件ID> --json`。再次 `codex plugin list --json` 核目标版本已启用，再运行 Studio 的 `connect` 指令并正常重载。目录未提供目标版或升级失败时保持待升级，不循环卸载重装。
+4. 确认目录中的版本是目标版本后，执行 `codex plugin add <原插件ID> --json`。再次 `codex plugin list --marketplace <原准确目录名> --json` 核目标版本已启用，再运行 Studio 的 `connect` 指令并开 Local 新聊天。目录未提供目标版或升级失败时保持待升级，不循环卸载重装。
 
 受管入口按原安装记录核身份，不以当前 Node 路径认领。每次复用会实际运行已记录的 Node 和该版本 `--version`（各最多10秒，无平台调用），缺失、低于20或无法启动时返回 `installation.recorded_node_unavailable`。可恢复原 Node.js 20+ 路径，或运行 Studio 提供的较新版本 connect：新的受管版本使用当前 Node，保留旧代码及原凭据。相同版本不会偷偷重写旧启动配置。官方 npm 插件的 `node` 按当前宿主环境的 PATH 检查；Desktop 重载后的真实 MCP 启动仍须单独确认。
