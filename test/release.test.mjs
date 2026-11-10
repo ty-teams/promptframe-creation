@@ -92,3 +92,15 @@ test("npm's first-package stage placeholder permits publishing but never proves 
   for (const version of ["0.0.0-preview", "0.1.0-beta.1", "0.2.0-stage"])
     assert.throws(() => validatePublishPlan(manifest, null, { version }), /registry_latest_version_unsupported/);
 });
+
+test('marked current instructions follow package version while historical examples remain exact',async()=>{
+ const {renderInstallGuidance,INSTALL_GUIDANCE_FILES}=await import('../scripts/install-guidance.mjs');
+ const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
+ const example='<!-- creation-install-command -->npx --yes @promptframe/creation@0.1.0 connect --endpoint <API><!-- /creation-install-command -->\nHistorical: @promptframe/creation@0.1.1';
+ const current=renderInstallGuidance(example,pkg.version);assert(current.includes('@promptframe/creation@'+pkg.version+' connect'));
+ assert(current.includes('Historical: @promptframe/creation@0.1.1'));assert.equal(renderInstallGuidance(current,pkg.version),current);
+ for(const file of INSTALL_GUIDANCE_FILES){const body=await readFile(path.join(root,file),'utf8');
+  assert.equal(renderInstallGuidance(body,pkg.version),body,file);for(const command of body.matchAll(/@promptframe\/creation@(\d+\.\d+\.\d+) connect/g))assert.equal(command[1],pkg.version,file);}
+ assert.throws(()=>renderInstallGuidance('unmarked',pkg.version),/guidance_marker_invalid/);
+ assert.throws(()=>renderInstallGuidance('<!-- creation-install-command -->bad<!-- /creation-install-command -->',pkg.version),/guidance_command_invalid/);
+});

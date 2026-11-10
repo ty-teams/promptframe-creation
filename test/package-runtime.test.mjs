@@ -12,6 +12,11 @@ test('npm pack/unpack alone contains a runnable bridge, both Skills and no exter
   const artifact=await pack(tmp);
   execFileSync('tar',['-xzf',path.join(tmp,artifact.filename),'-C',tmp]);
   const root=path.join(tmp,'package');
+  const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
+  for(const file of ['README.md','skills/creation-setup/SKILL.md','docs/installing.md']){
+   const body=await readFile(path.join(root,file),'utf8');
+   for(const match of body.matchAll(/@promptframe\/creation@(\d+\.\d+\.\d+) connect/g))assert.equal(match[1],pkg.version);
+  }
   await assert.rejects(access(path.join(root,'node_modules')));
   const output=execFileSync(process.execPath,[path.join(root,'bin/promptframe-creation.mjs'),'--help'],{
    cwd:tmp,encoding:'utf8',env:{...process.env,XDG_CONFIG_HOME:path.join(tmp,'config')},

@@ -1,6 +1,6 @@
 {
   "name": "@promptframe/creation",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": false,
   "description": "PromptFrame video creation Skill, Codex plugin and MCP client bridge.",
   "repository": {

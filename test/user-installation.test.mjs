@@ -301,3 +301,25 @@ test('missing recorded Node is explicit; restoration reuses the same files and a
   assert((await readFile(file)).equals(body));
  }finally{await f.dispose();}
 });
+
+test('pinned Git commit and tag registrations are diagnosed without changing host entries or credentials',async()=>{
+ for(const ref of ['a'.repeat(40),'creation-v0.2.3']){
+  const f=await fixture();try{
+   const catalog=path.join(f.root,'pinned');await mkdir(path.join(catalog,'.agents/plugins'),{recursive:true});
+   const git={source:'git',url:'https://synthetic.invalid/private?token=DO_NOT_EXPOSE',ref};
+   await writeFile(path.join(catalog,'.agents/plugins/marketplace.json'),JSON.stringify({plugins:[{name:'promptframe-creation',source:git}]}));
+   const row={pluginId:'promptframe-creation@pinned',name:'promptframe-creation',marketplaceName:'pinned',version:'0.2.3',enabled:true,source:git};
+   let writes=0;const runCodex=async args=>{
+    if(args[0]==='--version')return 'codex-cli 0.160.0';
+    if(args.slice(0,3).join(' ')==='plugin marketplace list')return JSON.stringify({marketplaces:[{name:'pinned',root:catalog,marketplaceSource:git}]});
+    if(args.slice(0,2).join(' ')==='plugin list')return JSON.stringify({installed:[row]});
+    if(args.join(' ')==='mcp list --json')return '[]';writes++;throw Error('unexpected write');};
+   const before=await readFile(path.join(catalog,'.agents/plugins/marketplace.json'));
+   for(let n=0;n<2;n++)await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex}),e=>{
+    assert.equal(e.message,'installation.pinned_git_plugin_upgrade_required');assert.equal(e.details.refName,ref);
+    assert(!JSON.stringify(e.details).includes('DO_NOT_EXPOSE'));return true;});
+   assert.equal(writes,0);assert.deepEqual(await readFile(path.join(catalog,'.agents/plugins/marketplace.json')),before);
+   await assert.rejects(stat(profileCredentialsPath('default',f.env)),{code:'ENOENT'});
+  }finally{await f.dispose();}
+ }
+});

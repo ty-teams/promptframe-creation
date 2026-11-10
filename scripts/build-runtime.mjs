@@ -4,6 +4,7 @@ import {mkdir,readFile,writeFile,access} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {CLIENT_VERSION} from '../lib/version.mjs';
+import {syncInstallGuidance} from './install-guidance.mjs';
 
 const root=fileURLToPath(new URL('..',import.meta.url));
 export async function buildRuntime(){
@@ -14,6 +15,7 @@ export async function buildRuntime(){
  if(catalog.plugins?.length!==1||catalog.plugins[0].source?.source!=='npm'
   ||catalog.plugins[0].source.package!==pkg.name||catalog.plugins[0].source.version!==pkg.version)
   throw Error('creation_build.catalog_version_mismatch');
+ await syncInstallGuidance(root,pkg.version);
  await mkdir(path.join(root,'dist'),{recursive:true});
  const result=await build({absWorkingDir:root,entryPoints:['lib/cli.mjs'],outfile:'dist/cli.mjs',
   bundle:true,platform:'node',format:'esm',target:'node20',metafile:true,legalComments:'linked',
