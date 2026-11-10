@@ -10,7 +10,7 @@ import {randomBytes} from 'node:crypto';
 import {Server} from '@modelcontextprotocol/sdk/server/index.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {ListToolsRequestSchema} from '@modelcontextprotocol/sdk/types.js';
-import {pack} from '../scripts/package-release.mjs';
+import {pack,verify} from '../scripts/package-release.mjs';
 const fixture=fileURLToPath(new URL('fixtures/codex-installer.mjs',import.meta.url));
 const json=async p=>JSON.parse(await readFile(p,'utf8'));
 function childResult(child,input=''){
@@ -37,7 +37,8 @@ test('packed npx/connect stays local while unrelated discovery hangs 60s; replay
   const env={...process.env,HOME:path.join(root,'home'),CODEX_HOME:path.join(root,'codex'),XDG_CONFIG_HOME:path.join(root,'config'),XDG_DATA_HOME:path.join(root,'data'),NPM_CONFIG_CACHE:path.join(root,'npm-cache'),NPM_CONFIG_USERCONFIG:path.join(root,'empty.npmrc'),NPM_CONFIG_IGNORE_SCRIPTS:'true',PATH:bin+path.delimiter+process.env.PATH,CREATION_FIXTURE_STATE:stateFile,CREATION_FIXTURE_SECRET:token};
   for(const k of Object.keys(env))if(/^(?:PROMPTFRAME_CREATION_CONFIG|NODE_AUTH_TOKEN|NPM_TOKEN|NPM_.*(?:TOKEN|PASSWORD)|npm_config_.*(?:auth|token|password))$/i.test(k))delete env[k];
   await mkdir(env.HOME);await writeFile(env.NPM_CONFIG_USERCONFIG,'');
-  const artifact=await pack(root),tgz=path.join(root,artifact.filename),endpoint=`http://127.0.0.1:${server.address().port}/api/mcp`;
+  const supplied=process.env.CREATION_INSTALLER_ARTIFACT;
+  const artifact=supplied?(await verify(supplied)).manifest:await pack(root),tgz=path.join(supplied??root,artifact.filename),endpoint=`http://127.0.0.1:${server.address().port}/api/mcp`;
   const run=async(extra=[],overrides={})=>{
    const start=performance.now();const p=spawn('npm',['exec','--yes','--offline','--package',tgz,'--','promptframe-creation','connect','--endpoint',endpoint,'--no-open','--token-stdin',...extra],{cwd:root,env:{...env,...overrides},stdio:['pipe','pipe','pipe']});
    const result=await childResult(p,token+'\n');assert(!result.stdout.includes(token)&&!result.stderr.includes(token),'no sensitive child output');return{...result,elapsedMs:performance.now()-start};
