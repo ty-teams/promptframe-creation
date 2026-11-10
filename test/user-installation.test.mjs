@@ -13,7 +13,7 @@ const json=async f=>JSON.parse(await readFile(f,'utf8'));
 async function fixture(){
  const root=await mkdtemp(path.join(os.tmpdir(),'creation-user-install-'));
  const env={...process.env,CODEX_HOME:path.join(root,'codex'),XDG_DATA_HOME:path.join(root,'data'),XDG_CONFIG_HOME:path.join(root,'config')};delete env.PROMPTFRAME_CREATION_CONFIG;
- let installed=[],catalogRoot,adds=0,checks=0,fail=false,loseAck=false,extra=[];const catalogs=new Map();
+ let installed=[],catalogRoot,adds=0,checks=0,fail=false,loseAck=false,hideCatalogEntry=false,extra=[];const catalogs=new Map();
  const runCodex=async args=>{
   if(args[0]==='--version')return 'codex-cli 0.160.0';
   if(args.join(' ')==='mcp list --json'){
@@ -25,7 +25,7 @@ async function fixture(){
   if(args.slice(0,3).join(' ')==='plugin marketplace list'){
    for(const p of installed.filter(x=>x.source?.source==='npm')){
     const dir=path.join(root,'catalogs',p.marketplaceName);await mkdir(path.join(dir,'.agents/plugins'),{recursive:true});
-    await writeFile(path.join(dir,'.agents/plugins/marketplace.json'),JSON.stringify({plugins:[{name:p.name,source:p.source}]}));catalogs.set(p.marketplaceName,dir);
+    await writeFile(path.join(dir,'.agents/plugins/marketplace.json'),JSON.stringify({plugins:hideCatalogEntry?[]:[{name:p.name,source:p.source}]}));catalogs.set(p.marketplaceName,dir);
    }
    return JSON.stringify({marketplaces:[...catalogs].map(([name,root])=>({name,root}))});
   }
@@ -41,7 +41,7 @@ async function fixture(){
   }throw Error('unexpected_codex_call');
  };
  return{root,env,runCodex,checkRuntime:async()=>{checks++;},counts:()=>({adds,checks}),setFail:x=>fail=x,setLoseAck:x=>loseAck=x,
-  setInstalled:x=>installed=x,setMcp:x=>extra=x,
+  setInstalled:x=>installed=x,setMcp:x=>extra=x,setHiddenRegistration:x=>hideCatalogEntry=x,
   dispose:()=>rm(root,{recursive:true,force:true})};
 }
 
@@ -59,6 +59,31 @@ test('ten repeats and two concurrent entries reuse one complete registered versi
   assert(path.isAbsolute(server.args[0]));
   assert.equal((await json(a.currentFile)).version,a.version);
   await assert.rejects(stat(profileCredentialsPath('default',f.env)),{code:'ENOENT'});
+ }finally{await f.dispose();}
+});
+
+test('a locally registered plugin removed from its catalog is still discovered before any registration write',async()=>{
+ const f=await fixture();try{
+  await mkdir(f.env.CODEX_HOME,{recursive:true});
+  await writeFile(path.join(f.env.CODEX_HOME,'config.toml'),'[plugins."promptframe-creation@foreign"]\nenabled = false\n',{mode:0o600});
+  f.setHiddenRegistration(true);f.setInstalled([{pluginId:'promptframe-creation@foreign',name:'promptframe-creation',marketplaceName:'foreign',version:sourceVersion,enabled:false,
+   source:{source:'npm',package:'@promptframe/creation',version:sourceVersion,registry:'https://untrusted.invalid'}}]);
+  f.setMcp([{name:'unrelated',transport:{type:'stdio',command:'node',args:[],cwd:f.root}}]);
+  await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),/existing_registration_requires_review/);
+  assert.equal(f.counts().adds,0);
+ }finally{await f.dispose();}
+});
+
+test('unresolved local registration and malformed private TOML remain unknown without leaking parser input',async()=>{
+ const f=await fixture();try{
+  await mkdir(f.env.CODEX_HOME,{recursive:true});const config=path.join(f.env.CODEX_HOME,'config.toml');
+  await writeFile(config,'[plugins."promptframe-creation@missing"]\nenabled=false\n',{mode:0o600});
+  await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),/local_registration_unconfirmed/);
+  const secret='synthetic-token-private-parser-input';await writeFile(config,'token = "'+secret+'\n');
+  await assert.rejects(installForUser({sourceRoot:source,env:f.env,runCodex:f.runCodex}),e=>{
+   assert.equal(e.message,'installation.local_config_unconfirmed');assert(!JSON.stringify({message:e.message,details:e.details}).includes(secret));return true;
+  });
+  assert.equal(f.counts().adds,0);
  }finally{await f.dispose();}
 });
 

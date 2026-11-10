@@ -47,6 +47,6 @@
 
 安装器按 connect 的固定目标版本比较实际安装：同版复用、更新版不降级、受管旧版准备独立目录。官方 npm 插件旧版先返回明确的待升级错误：Codex 0.160 的升级会删除旧缓存，不能假称能保护其他桥并自动升级。受管与官方复用均实际检查启动 Node 与包版本。安装结果新增 requestedVersion/versionStatus；安全错误只输出本地构造的版本、动作和指引，不输出宿主原始错误、环境或凭据。
 
-后继安装发现只使用 `codex plugin marketplace list --json` 的本地根索引、有界目录 JSON 和 `plugin list --marketplace <name> --json`。覆盖全部相关入口，不把不可读目录当未安装，也不调用必需全量远端插件查询。注册前持久保存精确 pending 身份；写回程未知后只观察该身份，不第二次 add 或自动降回旧注册。测试从 pack 的实际 npx/connect 入口核隔离配置、两个 profile、并发和失 ACK，不读个人配置。
+后继安装发现使用 `$CODEX_HOME/config.toml` 的结构化插件登记 ID、`codex plugin marketplace list --json` 的本地根索引、有界目录 JSON 和 `plugin list --marketplace <name> --json`。TOML 使用随运行文件打包的成熟解析器，只保留相关插件身份；目录条目删除后仍查询原登记，读面无法解析该登记就保持 unknown。覆盖全部相关入口，不把不可读目录当未安装，也不调用必需全量远端插件查询。注册前持久保存精确 pending 身份；写回程未知后只观察该身份，不第二次 add 或自动降回旧注册。测试从 pack 的实际 npx/connect 入口核隔离配置、两个 profile、并发和失 ACK，不读个人配置。
 
 宿主插件已安装/启用、平台连接验证与聊天加载分别报告。外部安装器不接私有 app-server 生产刷新通道；当前使用官方新聊天/新 session 路径，选择 Local 和独立非 Git 目录即可。候选包、公共 registry 固定包和真实宿主新聊天工具/两个 Skill 的验收分开记录。

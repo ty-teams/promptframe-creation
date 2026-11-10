@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Isolated supported-CLI simulator. Never run against a personal Codex home.
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 const args=process.argv.slice(2),file=process.env.CREATION_FIXTURE_STATE;
 if(!file)throw Error('fixture_state_required');
@@ -39,6 +39,8 @@ else if(args.slice(0,2).join(' ')==='plugin list'){
  const root=path.resolve(market.root,p.source.path),manifest=JSON.parse(await readFile(path.join(root,'.codex-plugin/plugin.json')));
  state.adds++;state.installed=state.installed.filter(p=>p.pluginId!==id);
  state.installed.push({pluginId:id,name:p.name,marketplaceName:market.name,version:manifest.version,enabled:true,source:{source:'local',path:root}});await save();
+ await mkdir(process.env.CODEX_HOME,{recursive:true});
+ await writeFile(path.join(process.env.CODEX_HOME,'config.toml'),state.installed.map(p=>'[plugins.'+JSON.stringify(p.pluginId)+']\nenabled = '+p.enabled+'\n').join('\n'),{mode:0o600});
  if(process.env.CREATION_FIXTURE_LOSE_ACK==='yes'){process.stderr.write(process.env.CREATION_FIXTURE_SECRET??'synthetic secret');process.exitCode=4;}
  else out({pluginId:id,version:manifest.version,installedPath:root});
 }else throw Error('unexpected_fixture_command');
