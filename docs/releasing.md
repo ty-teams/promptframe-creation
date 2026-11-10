@@ -2,11 +2,7 @@
 
 本仓独立发布 `@promptframe/creation`，不与组件作者四包绑定版本。源码和文档在 GitHub；npm 包提供版本化安装入口。基础版范围见[0.1.0 说明](releases/0.1.0.md)，首次 OIDC 后继版本见[0.1.1 说明](releases/0.1.1.md)。如果包被设为 `private: true`，CI仍可检查安装包，正式发布会明确拒绝；工作流不会自动删除这个字段。
 
-## 发行范围
-
-已授权 BUG/REQ 的代码修改，默认包含对应 npm 包在受影响测试和相应验收通过后的正常发行，无需逐版本或 tag 另行申请；用户明确 hold 时保持暂停。无需等待无关事项、硬件维护或全部人工验收完成后才发行自身已验包。纯规则或文档变更、没有包内容差额时不制造空版本。
-
-默认发行不改变公开边界：私有包和内部资料不能因此公开。插件市场上架、平台环境部署、个人宿主安装及活动桥替换仍按各自实际授权。保持版本与依赖合同、同一受检 tgz、旧版不可覆盖、OIDC 和官方 registry 回读；写回程未知先观察原 tag、run 和版本，不盲重触发或改版本补回执。
+相关测试、打包检查和版本验收通过后，发布相应版本。发布使用同一受检包，通过 GitHub Actions OIDC 完成，并核对官方 registry 的版本、integrity 和 provenance。既有版本和 tag 不覆盖；文档调整无需单独增加包版本。
 
 ## 日常检查
 
@@ -42,7 +38,7 @@ GitHub 仓库创建 Environment `npm-production`，部署规则只允许 `creati
 
 首次包初始化需要账号持有者完成 npm 要求的身份验证；登录或 2FA 提示由本人处理。不要将密码、OTP、恢复码或 Token 写进仓库/聊天。npm 新建的信任配置需在两天内完成首次成功发布，因此应在可审核版本就绪时配置。
 
-本仓首次初始化采用：账号持有者授权人工发布可用基础版 0.1.0 → 等官方 registry 确认包可读 → 配置并回读 Trusted Publisher → 用 GitHub OIDC 发布后继 0.1.1。人工首发不冒称 OIDC 发布；后续自动发行不再使用该登录凭据。
+本仓首次初始化采用：账号持有者人工发布基础版 0.1.0 → 等官方 registry 确认包可读 → 配置并回读 Trusted Publisher → 用 GitHub OIDC 发布后继 0.1.1。0.1.0采用人工首发，0.1.1起采用 OIDC，后续发行不再使用该登录凭据。
 
 官方也支持新包 staged publishing，但不能把 stage、trust 或 reject 的单条成功回执当成包身份与信任会持续存在的保证。本仓初始化时在暂存阶段创建信任后，拒绝唯一候选，随后包与信任读取均返回404；因此不采用“拒绝暂存后直接推标签”的初始化步骤。待审版本与正式版本仍共享版本唯一约束，不可竞争发布同一版本；任何候选撤除后都要重新核包和信任，确认可用再进入自动发行。
 
@@ -58,7 +54,7 @@ GitHub 仓库创建 Environment `npm-production`，部署规则只允许 `creati
 
 ## 维护与故障
 
-- `package_not_ready_private_must_be_false`：包尚未批准为可发行，先完成真实功能和版本提交。
+- `package_not_ready_private_must_be_false`：package.json 仍设为 private，检查包的公开范围和版本配置。
 - `release_tag_mismatch` / `version_mismatch`：核正常源码版本与标签，不移动已发布标签或覆盖旧版本。
 - npm认证失败：核 npm Trusted Publisher 的四个字段、直接publish权限、GitHub-hosted runner和对应Environment；无需新增长期Token。
 - `artifact_integrity_mismatch` / `registry_integrity_conflict`：停止该次发行，核同一个artifact与原版本，不重传不同字节冒充同版。

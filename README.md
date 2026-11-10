@@ -12,7 +12,7 @@ npx --yes @promptframe/creation@0.2.4 connect --endpoint <Studio提供的API地�
 
 每次从 Studio 获取当前固定推荐版本；入口比较已安装版本，较新版本保留，不后台追踪 latest。入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后在同一主机开一个 **Local 新聊天**（CLI 开新 session），确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。可以选择独立的非 Git 创作目录，不需要产品源码或 Worktree；不必重新安装或获取 Token。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
 
-[0.2.5](docs/releases/0.2.5.md)已按固定 `creation-v0.2.5` 标签发行，包含项目只读入门与 Skill 说明分流；源码、公共 registry 包与宿主实际加载仍分别核实。Studio 的固定推荐按对应平台版本提供，不追踪 latest。`0.2.4` 已按固定标签发行；安装发现、写回程未知保护和新聊天指引见[0.2.4说明](docs/releases/0.2.4.md)。本分支的后继源码增加项目只读入门与 Skill 说明分流，不冒称不可变的0.2.4公共包已包含这些后继改动。源码或候选本身不代表新版本已发行；每次以 Studio 的真实固定推荐、registry 和发行标签为准，旧包及标签保留。
+[0.2.5](docs/releases/0.2.5.md)已发布，新增项目只读入门和 Skill 说明读取。安装版本以 Studio 的固定推荐为准，已安装的较新版本不会降级。0.2.4 的安装发现、登记异常处理和新聊天指引见[版本说明](docs/releases/0.2.4.md)。
 
 API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置生产/私有地址。远程客户端不要改成自己的 localhost。另一个环境或账号显式使用 `--profile <名称>`；新旧桥各固定凭据路径，不热切环境。有效 Token 不因升级、新作品或接管轮换。详细安装、升级保旧、卸载和排障见[安装说明](docs/installing.md)。Linux、WSL、macOS 使用0700目录/0600凭据；原生Windows ACL尚未验证。
 
@@ -62,8 +62,6 @@ video-creation Skill 先动态发现平台目录/schema，选择用户有权的�
 
 受支持 Codex 在 MCP 元数据中自动提供 threadId。桥与平台结合环境、账号、安装和该thread区分编辑者；缺失身份拒绝新建/接管/新写，不退回共享编辑身份。原已接受任务的只读观察仍保留。桥管理本线程已批准的controlVersion，作品expectedRevision仍按原并发合同，不替模型追最新内容版本。四个内置只读候选使用真实同scope版本，服务仍以当前registry及白名单双核；不借读权缓存成编辑权。
 
-Token是独立创作授权，不是codex mcp login。已有有效文件会复用；网络失败不自动替换。外部未上报的聊天、本地文件和推理不在平台历史里，也不冒作平台使用费。其它宿主、原生Windows权限和官方插件市场上架各自按实际证据报告。
+Token是独立创作授权，不是codex mcp login。已有有效文件会复用；网络失败不自动替换。平台历史与用量记录覆盖经平台接收的请求；外部聊天、本地文件和本地推理不会自动计入。原生 Windows 的文件权限及其它宿主兼容性仍需单独验证。
 
-已授权 BUG/REQ 代码修改默认包含对应 npm 包在受影响测试及相应验收通过后的正常发行，无需逐版本或 tag 另行申请；用户明确 hold 时保持暂停。纯规则或文档变更不制造空版本，平台环境部署和个人宿主安装仍按各自实际授权。
-
-GitHub Actions沿独立版本和既有OIDC流程发行；普通main只跑CI。包/lock/plugin版本一致，正式新版本用新的creation-v标签，不覆盖或重发0.1.1。详见[发布手册](docs/releasing.md)。
+GitHub Actions沿独立版本和既有OIDC流程发行；普通main只跑CI。包/lock/plugin版本一致，正式新版本用新的creation-v标签，已发布的版本和标签保持不变。详见[发布手册](docs/releasing.md)。

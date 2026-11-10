@@ -17,9 +17,7 @@
 | 插件目录索引 | `.agents/plugins/marketplace.json` |
 | 发行内容、版本约束与同包核验 | `scripts/package-release.mjs`、`.github/workflows/ci.yml`、`.github/workflows/publish.yml` |
 
-## 事项对应的 npm 发行
-
-已授权 BUG/REQ 代码修改默认包含对应 npm 包在受影响测试及相应验收通过后的正常发行，不再逐版本或 tag 索批；用户明确 hold 时保持暂停。按[发布手册](releasing.md)使用同一受检 tgz、既有 OIDC 和官方 registry 回读，不覆盖旧版本。纯规则或文档变更不制造空版本；平台环境部署、个人宿主安装和插件市场上架不随 npm 发行扩大授权。
+打包、版本检查和发行步骤见[发布手册](releasing.md)。
 
 ## 三种版本分别核实
 
@@ -42,15 +40,15 @@
 - 普通源码检查使用本仓 `npm ci --ignore-scripts`、`npm test` 和[发布手册](releasing.md)的 pack/smoke；测试使用临时配置目录。
 - 修改宿主接线时核实际宿主元数据、缺失身份和多聊天隔离，不要求模型记忆身份字段；源码控制与真实宿主旅程分别记录。
 - 修改插件内容或安装流程时，从无既有依赖/凭据污染的目标环境核 manifest、Skill、桥启动和平台连接；保持现有有效凭据，升级不默认轮换 Token。
-- 普通打包/文档检查不调用真实平台 setup、生成媒体或模型。真实接入、任务和费用按当前实际授权执行；Skill 或 README 本身不授予权限。
-- 只改文档不自动发包或更新服务。交付说明记录源码、技术检查、registry 发行、宿主注册和真实创作的实际结果，未做项保持未验证。
+- 普通打包/文档检查不调用真实平台 setup、生成媒体或模型。接入和创作测试使用独立测试账号，并遵守平台的项目权限与用量限制。
+- 文档调整无需单独增加包版本。分别记录包检查、发行、宿主安装和创作测试结果。
 
 ## 公开范围
 
-使用说明保持公开且可移植。平台私有配置、真实端点默认值、用户样本、Token、内部协作材料和业务权限实现不进入本仓。组件创作需要的工具按 README 指向独立 authoring 仓；不在本仓维护第二套组件 CLI 参数手册或四包发行流程。
+使用说明保持公开且可移植。平台私有配置、真实端点默认值、用户样本、Token、内部资料和业务权限实现不进入本仓。组件创作需要的工具按 README 指向独立 authoring 仓；不在本仓维护第二套组件 CLI 参数手册或四包发行流程。
 
 安装器按 connect 的固定目标版本比较实际安装：同版复用、更新版不降级、受管旧版准备独立目录。官方 npm 插件旧版先返回明确的待升级错误：Codex 0.160 的升级会删除旧缓存，不能假称能保护其他桥并自动升级。受管与官方复用均实际检查启动 Node 与包版本。安装结果新增 requestedVersion/versionStatus；安全错误只输出本地构造的版本、动作和指引，不输出宿主原始错误、环境或凭据。
 
-后继安装发现使用 `$CODEX_HOME/config.toml` 的结构化插件登记 ID、`codex plugin marketplace list --json` 的本地根索引、有界目录 JSON 和 `plugin list --marketplace <name> --json`。TOML 使用随运行文件打包的成熟解析器，只保留相关插件身份；目录条目删除后仍查询原登记，读面无法解析该登记就保持 unknown。覆盖全部相关入口，不把不可读目录当未安装，也不调用必需全量远端插件查询。注册前持久保存精确 pending 身份；写回程未知后只观察该身份，不第二次 add 或自动降回旧注册。测试从 pack 的实际 npx/connect 入口核隔离配置、两个 profile、并发和失 ACK，不读个人配置。
+安装发现使用 `$CODEX_HOME/config.toml` 的结构化插件登记 ID、`codex plugin marketplace list --json` 的本地根索引、有界目录 JSON 和 `plugin list --marketplace <name> --json`。TOML 使用随运行文件打包的成熟解析器，只保留相关插件身份；目录条目删除后仍查询原登记，读面无法解析该登记就保持 unknown。覆盖全部相关入口，不把不可读目录当未安装，也不调用必需全量远端插件查询。注册前持久保存 pending 登记；注册请求未确认时先查询该登记状态，确认前不重复 add 或回退旧登记。测试从 pack 的实际 npx/connect 入口核隔离配置、两个 profile、并发和失 ACK，不读个人配置。
 
 宿主插件已安装/启用、平台连接验证与聊天加载分别报告。外部安装器不接私有 app-server 生产刷新通道；当前使用官方新聊天/新 session 路径，选择 Local 和独立非 Git 目录即可。候选包、公共 registry 固定包和真实宿主新聊天工具/两个 Skill 的验收分开记录。
