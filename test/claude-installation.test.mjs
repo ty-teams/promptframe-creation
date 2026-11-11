@@ -135,6 +135,18 @@ test('a registered root replaced by a link is rejected even when the referenced 
   }finally{await f.close();}
 });
 
+test('reuse preserves the recorded Node command when connect runs through another valid Node path',async()=>{
+  const f=await fixture();try{
+    const seen=[],options={sourceRoot:source,env:f.env,runClaude:f.runClaude,checkRuntime:f.checkRuntime,
+      verifyInstalledRuntime:async(_root,_version,command)=>{seen.push(command);}};
+    const first=await installForClaudeUser({...options,nodeCommand:'/own/recorded-node'});
+    const reused=await installForClaudeUser({...options,nodeCommand:'/own/new-node'});
+    assert.equal(reused.reused,true);assert.equal(reused.recordedRuntimeRetained,true);
+    assert.deepEqual(seen,['/own/recorded-node']);assert.equal(f.counts().installs,1);
+    assert.equal((await json(path.join(first.versionRoot,'.claude-mcp.json'))).mcpServers.promptframe.command,'/own/recorded-node');
+  }finally{await f.close();}
+});
+
 test('Desktop remote command discovery uses actual version filenames and refuses ambiguous highest builds',async()=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'creation-claude-path-'));
   try{
