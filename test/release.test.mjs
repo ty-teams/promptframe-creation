@@ -96,7 +96,7 @@ test("npm's first-package stage placeholder permits publishing but never proves 
 });
 
 test('marked current instructions follow package version while historical examples remain exact',async()=>{
- const {renderInstallGuidance,INSTALL_GUIDANCE_FILES}=await import('../scripts/install-guidance.mjs');
+ const {renderInstallGuidance,INSTALL_GUIDANCE_FILES,installGuidanceManifest}=await import('../scripts/install-guidance.mjs');
  const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
  const example='<!-- creation-install-command -->npx --yes @promptframe/creation@0.1.0 connect --endpoint <API><!-- /creation-install-command -->\nHistorical: @promptframe/creation@0.1.1';
  const current=renderInstallGuidance(example,pkg.version);assert(current.includes('@promptframe/creation@'+pkg.version+' connect'));
@@ -105,4 +105,9 @@ test('marked current instructions follow package version while historical exampl
   assert.equal(renderInstallGuidance(body,pkg.version),body,file);for(const command of body.matchAll(/@promptframe\/creation@(\d+\.\d+\.\d+) connect/g))assert.equal(command[1],pkg.version,file);}
  assert.throws(()=>renderInstallGuidance('unmarked',pkg.version),/guidance_marker_invalid/);
  assert.throws(()=>renderInstallGuidance('<!-- creation-install-command -->bad<!-- /creation-install-command -->',pkg.version),/guidance_command_invalid/);
+ const manifest=JSON.parse(await readFile(path.join(root,'docs/install-guidance.json'),'utf8'));
+ assert.deepEqual(manifest,installGuidanceManifest(pkg.version));
+ assert.deepEqual(manifest.hosts.map(h=>h.kind),['codex','claude-code']);
+ assert.equal(manifest.hosts[1].minimumBridge,'0.3.0','new host support is not retroactively claimed for old public versions');
+ assert.deepEqual(manifest.hosts[1].commandArgs,['connect','--host','claude-code','--endpoint','{{endpoint}}']);
 });
