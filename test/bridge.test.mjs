@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import {directory,wire,sha,inputDigest} from "./fixtures/discovery.mjs";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -64,23 +65,23 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
       { name: "local-protocol-fixture", version: "1" },
       { capabilities: { tools: {} } },
     );
-    mcp.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: [{ name: "platform_call_tool", inputSchema: {
-        type: "object", properties: { controlVersion: { type: "integer" } },
-        required: ["controlVersion"],
-      } }],
-    }));
+    mcp.setRequestHandler(ListToolsRequestSchema,async()=>directory());
     mcp.setRequestHandler(CallToolRequestSchema, async (message) => {
       calls.push(message.params);
+      const metadata=wire(message.params,{controlVersion,editor:{kind:'client',isCurrentClient:message.params._meta?.threadId===ownerThread},
+        platformDigest:sha(endpoint),installationDigest:sha(req.headers['x-promptframe-client-id'])});
+      if(message.params.name==='platform_describe_tool')return {content:[{type:'text',text:'{}'}],_meta:{'promptframe.creation':{
+        ...metadata,resolvedAccess:{tool:message.params.arguments.tool,access:'controlled',argumentsDigest:inputDigest(message.params.arguments.arguments)}}}};
       if (message.params.name === "platform_read_session") {
         return { content: [{ type: "text", text: JSON.stringify({
           payloadRevision: 1,
           sessionId: "own-work",
           control: { controlVersion, editor: { kind: "client", name: "Own fixture",
             isCurrentClient: message.params._meta?.threadId === ownerThread } },
-        }) }] };
+        }) }],_meta:{"promptframe.creation":metadata} };
       }
       return {
+        _meta:{"promptframe.creation":metadata},
         content: [
           {
             type: "text",
@@ -196,7 +197,7 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
       value = JSON.parse(result.content[0].text);
     assert.deepEqual(calls[1], { ...request,
       arguments: { ...request.arguments, controlVersion: 2 } });
-    assert.equal(calls[0].name, "platform_read_session");
+    assert.equal(calls[0].name, "platform_describe_tool");
     assert.equal(calls[0]._meta.threadId, threadA);
     assert.equal(value.taskId, "own-protocol-task");
     assert.equal(value.status, "waiting");
