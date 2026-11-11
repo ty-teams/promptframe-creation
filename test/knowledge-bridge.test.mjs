@@ -58,11 +58,12 @@ test('built stdio bridge forwards standard resources/prompts, safe errors and ob
   timeout:30000,
 },async()=>{
   const root=fileURLToPath(new URL('..',import.meta.url)),temporary=await mkdtemp(path.join(os.tmpdir(),'creation-knowledge-'));
-  const config=path.join(temporary,'credentials.json'),seen=[],token='pf_create_'+'k'.repeat(43);let version=1;
+  const config=path.join(temporary,'credentials.json'),seen=[],requests=[],token='pf_create_'+'k'.repeat(43);let version=1;
   const remote=http.createServer(async(req,res)=>{
     if(req.headers.authorization!=='Bearer '+token){res.writeHead(401);res.end();return;}
     if(req.method!=='POST'){res.writeHead(405,{Allow:'POST'});res.end();return;}
     const chunks=[];for await(const chunk of req)chunks.push(chunk);const body=JSON.parse(Buffer.concat(chunks));
+    requests.push({method:body.method,types:req.headers['x-promptframe-content-types'],source:req.headers['x-promptframe-content-source']});
     const server=new Server({name:'own-knowledge-fixture',version:'1'},{capabilities:{tools:{},resources:{},prompts:{}}});
     server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:[]}));
     server.setRequestHandler(ListResourcesRequestSchema,async request=>{
@@ -82,7 +83,7 @@ test('built stdio bridge forwards standard resources/prompts, safe errors and ob
     await server.connect(transport);res.on('close',()=>{void server.close().catch(()=>{});});
     await transport.handleRequest(req,res,body);
   });
-  const client=new Client({name:'own-host-fixture',version:'1'});let notifications=0;
+  const client=new Client({name:'own-host-fixture',version:'1'},{capabilities:{experimental:{'promptframe.contentTypes':['text','image','audio']}}});let notifications=0;
   client.setNotificationHandler(ResourceListChangedNotificationSchema,()=>{notifications++;});
   try{
     await new Promise(resolve=>remote.listen(0,'127.0.0.1',resolve));
@@ -109,6 +110,10 @@ test('built stdio bridge forwards standard resources/prompts, safe errors and ob
       assert.match(String(error),/creation.connection_unresolved/);assert.doesNotMatch(String(error),/private-credential/);return true;
     });
     assert.ok(seen.every(p=>p?._meta?.threadId===threadA));
+    assert.deepEqual(JSON.parse(requests.find(p=>p.method==='initialize').types),['text']);
+    assert.equal(requests.find(p=>p.method==='initialize').source,'text-fallback');
+    assert.ok(requests.filter(p=>p.method==='resources/read').every(p=>p.source==='declared'
+      &&JSON.stringify(JSON.parse(p.types))===JSON.stringify(['text','image','audio'])));
   }finally{
     await client.close();await new Promise(resolve=>remote.close(resolve));await rm(temporary,{recursive:true});
   }
