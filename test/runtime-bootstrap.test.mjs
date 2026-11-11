@@ -95,6 +95,15 @@ test('same version cannot change its recorded integrity before a new cache is ex
   }finally{await f.close();}
 });
 
+test('a verified Codex-only package cannot become a Claude runtime merely by choosing its version',async()=>{
+  const f=await fixture();try{
+    await prepareVerifiedRuntime(f.meta,{cacheRoot:f.cacheRoot,fetchImpl:f.fetchImpl});
+    const calls=f.calls.length;
+    await assert.rejects(prepareVerifiedRuntime(f.meta,{cacheRoot:f.cacheRoot,fetchImpl:f.fetchImpl,hostKind:'claude-code'}),/runtime_host_unsupported/);
+    assert.equal(f.calls.length,calls,'an incompatible verified cache is not launched or replaced');
+  }finally{await f.close();}
+});
+
 test('minimum/explicit locks are checked before fetching; fallback requires a positively compatible current version',async()=>{
   const f=await fixture();let calls=0;const unavailable=async()=>{calls++;return new Response('',{status:404});};
   try{

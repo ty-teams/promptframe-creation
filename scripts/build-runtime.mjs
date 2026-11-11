@@ -10,8 +10,9 @@ const root=fileURLToPath(new URL('..',import.meta.url));
 export async function buildRuntime(){
  const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
  const plugin=JSON.parse(await readFile(path.join(root,'.codex-plugin/plugin.json'),'utf8'));
+ const claude=JSON.parse(await readFile(path.join(root,'.claude-plugin/plugin.json'),'utf8'));
  const catalog=JSON.parse(await readFile(path.join(root,'.agents/plugins/marketplace.json'),'utf8'));
- if(pkg.version!==CLIENT_VERSION||pkg.version!==plugin.version)throw Error('creation_build.version_mismatch');
+ if(pkg.version!==CLIENT_VERSION||pkg.version!==plugin.version||pkg.version!==claude.version)throw Error('creation_build.version_mismatch');
  if(catalog.plugins?.length!==1||catalog.plugins[0].source?.source!=='npm'
   ||catalog.plugins[0].source.package!==pkg.name||catalog.plugins[0].source.version!==pkg.version)
   throw Error('creation_build.catalog_version_mismatch');

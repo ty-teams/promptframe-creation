@@ -22,7 +22,7 @@ test('npm pack/unpack alone contains a runnable bridge, both Skills and no exter
    cwd:tmp,encoding:'utf8',env:{...process.env,XDG_CONFIG_HOME:path.join(tmp,'config')},
   });
   assert(output.includes('promptframe-creation connect'));
-  for(const name of ['skills/creation-setup/SKILL.md','skills/video-creation/SKILL.md','.mcp.json'])
+  for(const name of ['skills/creation-setup/SKILL.md','skills/video-creation/SKILL.md','.mcp.json','.claude-mcp.json','.claude-plugin/plugin.json','.claude-plugin/marketplace.json'])
    assert((await readFile(path.join(root,name))).length>0);
  }finally{await rm(tmp,{recursive:true,force:true});}
 });

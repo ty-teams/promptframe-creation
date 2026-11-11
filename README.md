@@ -20,6 +20,8 @@ API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置�
 
 ## 源码、包和宿主范围
 
+当前开发源码增加 Claude Code 插件适配。可在构建后使用 `node bin/promptframe-creation.mjs connect --host claude-code --endpoint <API地址>`；公开0.2.7仍使用上方 Codex 安装入口。Claude Code 的源码接线、后续 npm 版本和真实桌面会话分别核实，详见[安装说明](docs/installing.md#claude-code源码接入)。
+
 | 版本或层次 | 适用范围 |
 | --- | --- |
 | 历史 npm0.1.1 / creation-v0.1.1 | 固定3da232e267117794fcbcbb1920cbdf9f3f294c14的基础setup/status/bridge；不是此版的聊天身份和插件安装功能 |

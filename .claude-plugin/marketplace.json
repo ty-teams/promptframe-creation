@@ -1,0 +1,5 @@
+{
+  "name": "promptframe-creation",
+  "owner": {"name": "PromptFrame"},
+  "plugins": [{"name": "promptframe-creation", "source": "./"}]
+}

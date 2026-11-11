@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "promptframe": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/promptframe-creation.mjs", "bridge", "--host", "claude-code"]
+    }
+  }
+}

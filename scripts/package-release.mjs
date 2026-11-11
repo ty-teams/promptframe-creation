@@ -16,7 +16,7 @@ const run = (command, args, options = {}) => execFileSync(command, args, {
   encoding: "utf8", maxBuffer: 8 * 1024 * 1024, ...options,
 });
 
-export function validateMetadata(pkg, lock, plugin) {
+export function validateMetadata(pkg, lock, plugin, claudePlugin) {
   if (pkg.name !== PACKAGE || lock.name !== PACKAGE || lock.packages?.[""]?.name !== PACKAGE)
     fail("package_name_mismatch");
   if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(pkg.version)) fail("stable_version_required");
@@ -24,6 +24,7 @@ export function validateMetadata(pkg, lock, plugin) {
     fail("version_mismatch");
   if (pkg.repository?.url !== `git+https://github.com/${REPOSITORY}.git`)
     fail("repository_mismatch");
+  if (claudePlugin && claudePlugin.version !== pkg.version) fail("version_mismatch");
   return pkg;
 }
 
@@ -37,16 +38,18 @@ export function validateFiles(files) {
   const required = ["package.json", "README.md", "LICENSE", "bin/promptframe-creation.mjs",
     "lib/credentials.mjs", "lib/connection.mjs", "skills/video-creation/SKILL.md",
     ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json",
+    ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".claude-mcp.json",
     "dist/cli.mjs","dist/THIRD_PARTY_NOTICES.txt","skills/creation-setup/SKILL.md"];
   if (required.some((name) => !files.includes(name))) fail("package_file_missing");
-  if (files.some((name) => !/^(?:package\.json|README\.md|LICENSE|\.mcp\.json|(?:bin|dist|lib|skills|docs|\.codex-plugin|\.agents\/plugins)\/[^\r\n]+)$/.test(name)
+  if (files.some((name) => !/^(?:package\.json|README\.md|LICENSE|\.mcp\.json|\.claude-mcp\.json|(?:bin|dist|lib|skills|docs|\.codex-plugin|\.claude-plugin|\.agents\/plugins)\/[^\r\n]+)$/.test(name)
     || name.split("/").some((part) => part === "..")
     || /(?:^|\/)(?:node_modules|credentials\.json|\.env(?:\..*)?)$/.test(name))) fail("package_file_forbidden");
 }
 
 async function metadata() {
   return validateMetadata(await json(path.join(root, "package.json")),
-    await json(path.join(root, "package-lock.json")), await json(path.join(root, ".codex-plugin/plugin.json")));
+    await json(path.join(root, "package-lock.json")), await json(path.join(root, ".codex-plugin/plugin.json")),
+    await json(path.join(root, ".claude-plugin/plugin.json")));
 }
 
 async function npmEnvironment(directory, { publishing = false } = {}) {
@@ -99,8 +102,9 @@ export async function verify(directory) {
   validateFiles(files);
   const packed = JSON.parse(run("tar", ["-xOzf", artifact, "package/package.json"]));
   const plugin = JSON.parse(run("tar", ["-xOzf", artifact, "package/.codex-plugin/plugin.json"]));
+  const claude = JSON.parse(run("tar", ["-xOzf", artifact, "package/.claude-plugin/plugin.json"]));
   if (packed.name !== pkg.name || packed.version !== pkg.version || packed.private !== pkg.private
-    || packed.repository?.url !== pkg.repository.url || plugin.version !== pkg.version)
+    || packed.repository?.url !== pkg.repository.url || plugin.version !== pkg.version || claude.version !== pkg.version)
     fail("packed_metadata_mismatch");
   return { pkg, manifest, artifact };
 }

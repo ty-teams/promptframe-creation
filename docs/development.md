@@ -8,6 +8,7 @@
 | --- | --- |
 | 命令和 stdio 桥 | `bin/promptframe-creation.mjs`预检 → `lib/cli.mjs` / `dist/cli.mjs`自包含构建 |
 | 用户级安装与profile | `lib/user-installation.mjs` |
+| Claude Code 本机入口和插件登记 | `lib/claude-command.mjs`、`lib/claude-installation.mjs` |
 | 依赖闭包/许可证 | `scripts/build-runtime.mjs` |
 | 环境地址与安全凭据 | `lib/credentials.mjs` |
 | 平台 MCP HTTP 连接 | `lib/connection.mjs` |
@@ -63,3 +64,5 @@
 安装发现使用 `$CODEX_HOME/config.toml` 的结构化插件登记 ID、`codex plugin marketplace list --json` 的本地根索引、有界目录 JSON 和 `plugin list --marketplace <name> --json`。TOML 使用随运行文件打包的成熟解析器，只保留相关插件身份；目录条目删除后仍查询原登记，读面无法解析该登记就保持 unknown。覆盖全部相关入口，不把不可读目录当未安装，也不调用必需全量远端插件查询。注册前持久保存 pending 登记；注册请求未确认时先查询该登记状态，确认前不重复 add 或回退旧登记。测试从 pack 的实际 npx/connect 入口核隔离配置、两个 profile、并发和失 ACK，不读个人配置。
 
 宿主插件已安装/启用、平台连接验证与聊天加载分别报告。外部安装器不接私有 app-server 生产刷新通道；当前使用官方新聊天/新 session 路径，选择 Local 和独立非 Git 目录即可。候选包、公共 registry 固定包和真实宿主新聊天工具/两个 Skill 的验收分开记录。
+
+Claude Code 使用官方 `plugin list --json` 与 `plugin marketplace list --json` 读取登记，不调用会健康检查 MCP 的 `mcp list/get`。本地 marketplace 的 `readFromFolder/folderVersion` 表示实际读取目录，与安装记录的缓存路径分别核对；版本目录及两份 MCP 定义均验证摘要。每个登记写前保存阶段，回程未知后只观察原身份。隔离 CLI 安装不等于桌面模型会话加载。

@@ -17,8 +17,8 @@ const env = { GITHUB_REPOSITORY: REPOSITORY, GITHUB_EVENT_NAME: "push", GITHUB_R
 test('tag preflight and publisher module load before npm ci without build dependencies',async()=>{
  const root=fileURLToPath(new URL('..',import.meta.url));const tmp=await mkdtemp(path.join(os.tmpdir(),'creation-release-preflight-'));
  try{
-  await mkdir(path.join(tmp,'scripts'));await mkdir(path.join(tmp,'.codex-plugin'));
-  for(const file of ['package.json','package-lock.json','.codex-plugin/plugin.json','scripts/package-release.mjs','scripts/build-runtime.mjs'])
+  await mkdir(path.join(tmp,'scripts'));await mkdir(path.join(tmp,'.codex-plugin'));await mkdir(path.join(tmp,'.claude-plugin'));
+  for(const file of ['package.json','package-lock.json','.codex-plugin/plugin.json','.claude-plugin/plugin.json','scripts/package-release.mjs','scripts/build-runtime.mjs'])
    await cp(path.join(root,file),path.join(tmp,file));
   const pkg=JSON.parse(await readFile(path.join(tmp,'package.json'),'utf8'));
   const result=execFileSync(process.execPath,[path.join(tmp,'scripts/package-release.mjs'),'check-release'],{
@@ -31,6 +31,7 @@ test('tag preflight and publisher module load before npm ci without build depend
 test("release metadata binds package, lock and plugin versions", () => {
   assert.equal(validateMetadata(pkg, lock, plugin), pkg);
   assert.throws(() => validateMetadata(pkg, lock, { version: "0.2.0" }), /version_mismatch/);
+  assert.throws(() => validateMetadata(pkg, lock, plugin, {version:'0.2.0'}), /version_mismatch/);
   assert.throws(() => validateMetadata(pkg, { ...lock, version: "0.2.0" }, plugin), /version_mismatch/);
   assert.throws(() => validateMetadata({ ...pkg, name: "other" }, lock, plugin), /package_name_mismatch/);
 });
@@ -58,6 +59,7 @@ test("the packed artifact preserves hidden plugin entries and rejects private fi
     const required = ["package.json", "README.md", "LICENSE", "bin/promptframe-creation.mjs",
       "lib/credentials.mjs", "lib/connection.mjs", "skills/video-creation/SKILL.md",
       ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json",
+      ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".claude-mcp.json",
       "dist/cli.mjs","dist/THIRD_PARTY_NOTICES.txt","skills/creation-setup/SKILL.md"];
     assert.throws(() => validateFiles(required.slice(1)), /package_file_missing/);
     for (const name of ["credentials.json", "lib/credentials.json", "docs/.env", "test/private.mjs", "lib/../private.mjs"])

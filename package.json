@@ -14,6 +14,8 @@
     "skills/",
     "docs/",
     ".codex-plugin/plugin.json",
+    ".claude-plugin/",
+    ".claude-mcp.json",
     ".agents/plugins/marketplace.json",
     ".mcp.json"
   ],

@@ -20,6 +20,20 @@ npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地�
 
 安装输出分别报告插件已安装、已启用、平台凭据连接已核验；`hostMcpConnected` 与 `sessionLoaded` 在安装器中仍为 `not_verified`。当前聊天是否已加载，要由该聊天实际发现 Skill 和调用 MCP 只读工具验证。若宿主将来提供明确受支持的同会话刷新入口，也须同时核回这两类能力后才能报告加载成功。
 
+## Claude Code 源码接入
+
+当前开发源码支持 `connect --host claude-code`，需要 Node.js20+ 和提供结构化插件命令的 Claude Code2.0.12+；公开0.2.7的安装入口仍为 Codex。源码构建后，在 Claude Code 所在主机运行：
+
+```bash
+node bin/promptframe-creation.mjs connect --host claude-code --endpoint <Studio提供的API地址>
+```
+
+CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别同一用户桌面端管理的实际远程构建。可用 `--claude-bin <绝对可执行文件>` 明确指定入口。不会启动 Claude 模型会话或固定桌面构建文件名。
+
+两个宿主共用所选 profile 的安全凭据，插件登记和版本目录独立。Claude 适配通过官方 user-scope 本地 marketplace/install 命令注册，再读取完整插件身份、实际版本目录、MCP 定义和文件摘要；当前聊天是否加载仍需在同一主机的新 Claude Code session 检查两个 Skill 与 MCP。安装期间不会替换活动桥或清理旧版本。登记回程未知时只核原身份，不能重复 install 或改用另一登记方式。已有同名手工 MCP、其它来源或不明目录需要先核实，不自动覆盖。
+
+本机隔离检查覆盖 CLI 插件登记与版本复用；桌面版真实加载、恢复会话和编辑权仍单独验证。原生 Windows ACL 尚未验证。插件命令不可用时的独立 MCP 与 Skill 安装路径仍在开发，不将单独登记 MCP 报为插件已安装。
+
 ## 环境与账号
 
 默认凭据沿用 `$XDG_CONFIG_HOME/promptframe-creation/credentials.json`（未配置 XDG 时位于用户 `.config`）。旧的 `PROMPTFRAME_CREATION_CONFIG` 仍可显式引用安全文件。

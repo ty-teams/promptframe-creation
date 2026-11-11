@@ -68,6 +68,8 @@ test('built entry verifies a fixed archive then hands real MCP stdio to one runt
       'lib/fixture.mjs':'export {};','docs/installing.md':'Own test only',
       'skills/creation-setup/SKILL.md':'Own fixture','skills/video-creation/SKILL.md':'Own fixture',
       '.codex-plugin/plugin.json':JSON.stringify({name:'promptframe-creation',version:nextVersion}),'.mcp.json':'{}'};
+    files['.claude-plugin/plugin.json']=JSON.stringify({name:'promptframe-creation',version:nextVersion});
+    files['.claude-mcp.json']='{}';
     for(const[name,body]of Object.entries(files)){const dest=path.join(pkg,name);await mkdir(path.dirname(dest),{recursive:true,mode:0o700});await writeFile(dest,body,{mode:0o600});}
     const chunks=[];for await(const chunk of createTar({cwd:temporary,gzip:true,portable:true,noMtime:true},['package']))chunks.push(chunk);
     const archive=Buffer.concat(chunks),tarball='https://registry.npmjs.org/@promptframe/creation/-/creation-'+nextVersion+'.tgz';
