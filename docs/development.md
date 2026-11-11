@@ -12,6 +12,7 @@
 | 环境地址与安全凭据 | `lib/credentials.mjs` |
 | 平台 MCP HTTP 连接 | `lib/connection.mjs` |
 | 当前源码的宿主 thread 与控制版本接线 | `lib/host-context.mjs` |
+| 新会话固定版本选择、完整性缓存与 stdio 接续 | `lib/runtime-bootstrap.mjs`、`lib/runtime-package.mjs`、`lib/runtime-launch.mjs` |
 | 插件加载与启动 | `.codex-plugin/plugin.json`、`.mcp.json` |
 | 公开视频创作规则 | `skills/video-creation/SKILL.md` |
 | 插件目录索引 | `.agents/plugins/marketplace.json` |
@@ -33,7 +34,11 @@
 
 当前源码按平台握手结果提供标准 resources/prompts 读取。项目公开指引复用平台已验证的创作基线；资源 URI 由平台解析，每次读取重新检查账号和项目权限。带版本的引用遇到正文版本变化会提示重新列取，不静默替换内容。桥保留标准正文和元数据，按序列化 UTF-8 计算单块400000字节、整次2000000字节上限；超限不会重执行业务。后续正常读取观察到版本变化时发送对应目录通知，不启动后台轮询。未声明这些能力的平台仍可通过原工具入口读取入门说明。源码能力、公开包和宿主实际支持分别核实。
 
-当前源码读取平台初始化中的 `experimental.promptframe.creation` 兼容声明，按真实桥版本检查 `minBridge`，保留 `recommendedBridge` 作为固定升级目标；这一步不下载软件。外部宿主可在初始化声明 `experimental.promptframe.contentTypes`，桥只转发已知种类，未声明时使用明确的文字降级。媒体能力来自宿主声明，不从模型或宿主名称推断；真实桌面是否展示图片、音频和资源仍需分别验证。启动时选取新版本和活动进程替换是不同操作，后者不在本桥行为中。
+当前源码在新会话启动时读取平台初始化中的 `experimental.promptframe.creation` 兼容声明。在接收宿主工具调用前，按真实版本检查 `minBridge`，从官方 npm registry 获取固定的 `recommendedBridge`；`--bridge-version X.Y.Z` 可锁定一个兼容版本。下载只允许公开的 `@promptframe/creation` 固定版本，核 SHA-512 integrity、包身份及自包含运行文件后，再原子放入私有缓存。缓存按完整文件摘要复核，同版本不能更换完整性摘要，准备过程不运行安装脚本或注册宿主。新进程继承同一凭据路径和冻结的宿主会话身份，活动桥不被替换。
+
+获取或校验失败时，只有当前程序已经达到已知最低版本才可继续；显式锁定失败不会另选版本。平台缺少兼容声明时提示先更新平台。缓存位于安全凭据目录下的 `runtime-cache`，不会自动删除旧版本或清除不明准备锁。新运行进程启动后的错误不会触发第二次桥启动。
+
+外部宿主可在初始化声明 `experimental.promptframe.contentTypes`，桥只转发已知种类，未声明时使用明确的文字降级。媒体能力来自宿主声明，不从模型或宿主名称推断；真实桌面是否展示图片、音频和资源仍需分别验证。源码、公开包及实际宿主加载分别核实。
 
 `bridge --host codex`使用宿主提供的threadId；`bridge --host claude-code`使用启动环境中的`CLAUDE_CODE_SESSION_ID`。未指定host时，`CLAUDECODE=1`选择Claude Code，其余选择Codex。Claude会话ID缺失时，本进程使用临时UUID；下次启动不能据此保留原编辑身份。无效会话ID会报错，不从调用参数接受替代值。公开发行与两种桌面宿主的实际加载分别核实。
 

@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import {directory,wire,sha,inputDigest} from "./fixtures/discovery.mjs";
+import {directory,wire,sha,inputDigest,bridgePolicy} from "./fixtures/discovery.mjs";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -63,7 +63,7 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
     const body = JSON.parse(Buffer.concat(chunks).toString());
     const mcp = new Server(
       { name: "local-protocol-fixture", version: "1" },
-      { capabilities: { tools: {} } },
+      { capabilities: { tools: {},experimental:{'promptframe.creation':bridgePolicy} } },
     );
     mcp.setRequestHandler(ListToolsRequestSchema,async()=>directory());
     mcp.setRequestHandler(CallToolRequestSchema, async (message) => {

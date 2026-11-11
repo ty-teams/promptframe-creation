@@ -14,7 +14,7 @@ import {ListResourcesRequestSchema,ReadResourceRequestSchema,ListResourceTemplat
   McpError,ErrorCode} from '@modelcontextprotocol/sdk/types.js';
 import {createHostCallBridge} from '../lib/host-context.mjs';
 import {writeCredentials} from '../lib/credentials.mjs';
-import {credentials,threadA} from './fixtures/discovery.mjs';
+import {credentials,threadA,bridgePolicy} from './fixtures/discovery.mjs';
 
 const sha=n=>'sha256:'+n.toString(16).padStart(64,'0');
 const uri='promptframe://creation-guides/opaque-project-version';
@@ -64,7 +64,7 @@ test('built stdio bridge forwards standard resources/prompts, safe errors and ob
     if(req.method!=='POST'){res.writeHead(405,{Allow:'POST'});res.end();return;}
     const chunks=[];for await(const chunk of req)chunks.push(chunk);const body=JSON.parse(Buffer.concat(chunks));
     requests.push({method:body.method,types:req.headers['x-promptframe-content-types'],source:req.headers['x-promptframe-content-source']});
-    const server=new Server({name:'own-knowledge-fixture',version:'1'},{capabilities:{tools:{},resources:{},prompts:{}}});
+    const server=new Server({name:'own-knowledge-fixture',version:'1'},{capabilities:{tools:{},resources:{},prompts:{},experimental:{'promptframe.creation':bridgePolicy}}});
     server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:[]}));
     server.setRequestHandler(ListResourcesRequestSchema,async request=>{
       seen.push(request.params);return{resources:[{uri,name:'Public guide',mimeType:'text/markdown'}],_meta:{'promptframe.guideDirectoryVersion':sha(version)}};

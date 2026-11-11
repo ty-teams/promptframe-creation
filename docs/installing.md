@@ -36,6 +36,8 @@ npx --yes @promptframe/creation@0.2.7 connect --profile work-account --endpoint 
 
 ## 版本与失败
 
+当前源码支持在新会话启动时，根据平台给出的最低和推荐版本选择兼容的固定 npm 包。包从官方 registry 获取并校验完整性，已校验缓存可以复用；Token、profile 和会话身份保持。可在桥启动配置中加 `--bridge-version X.Y.Z` 锁定版本，锁定低于最低要求时会明确拒绝。获取失败时仅兼容的当前程序可继续；显式锁定失败不会悄悄使用另一个版本。活动聊天的桥不被替换，源码中的新启动能力也不会自动出现在既有旧版插件中。
+
 推荐版本由 Studio 当前连接指引提供，入口每次对照命令中的固定版本检查安装。同版本复用；受管旧版准备新版并切换后续入口；已安装更新版返回 `newer_retained`，不降级。没有后台自动追踪 latest；再次连接时从 Studio 复制当前指令，不沿用旧聊天中的版本。
 
 每个 profile 的安装位于 `$XDG_DATA_HOME/promptframe-creation/<profile>`（默认用户 `.local/share`），版本在 `versions/<version>`。同版本完整内容复用，不再次下载运行依赖；两个入口串行合并。新版本先完整准备和检查，再注册并原子更新 `current.json`。旧版本及其依赖保留，不覆盖、不枚举或终止其它聊天。

@@ -1,4 +1,7 @@
 import {createHash} from 'node:crypto';
+import {CLIENT_VERSION} from '../../lib/version.mjs';
+export const bridgePolicy={contractVersion:'creation-bridge-capabilities/v1',minBridge:CLIENT_VERSION,recommendedBridge:CLIENT_VERSION,
+  contentTypes:['text','image','audio','resource_link','resource'],blockMaxBytes:400000,responseMaxBytes:2000000};
 export const sha=value=>'sha256:'+createHash('sha256').update(value).digest('hex');
 export const credentials={endpoint:'http://127.0.0.1:23456/api/mcp',clientId:'own-isolated-installation'};
 export const threadA='01a10000-0000-7000-8000-000000000001';

@@ -66,7 +66,10 @@ test('real authenticated initialize rejects a higher minimum before any tool cal
     temporary=await mkdtemp(path.join(os.tmpdir(),'creation-policy-cli-'));
     const config=path.join(temporary,'credentials.json');
     await writeCredentials({...credentials,version:1,token:'pf_create_'+'k'.repeat(43),createdAt:new Date().toISOString()},config);
-    const child=spawn(process.execPath,[fileURLToPath(new URL('../bin/promptframe-creation.mjs',import.meta.url)),'bridge','--host','codex'],
+    const fetchFixture=path.join(temporary,'fetch-fixture.mjs');
+    await import('node:fs/promises').then(fs=>fs.writeFile(fetchFixture,
+      'const original=globalThis.fetch;globalThis.fetch=(u,o)=>new URL(u).hostname==="registry.npmjs.org"?Promise.resolve(new Response("",{status:404})):original(u,o);\n',{mode:0o600}));
+    const child=spawn(process.execPath,['--import',fetchFixture,fileURLToPath(new URL('../bin/promptframe-creation.mjs',import.meta.url)),'bridge','--host','codex'],
       {env:{...process.env,PROMPTFRAME_CREATION_CONFIG:config},stdio:['pipe','pipe','pipe']});
     let stdout='',stderr='';child.stdout.on('data',b=>{stdout+=b;});child.stderr.on('data',b=>{stderr+=b;});child.stdin.end();
     const code=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve);});
