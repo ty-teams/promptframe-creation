@@ -1,18 +1,18 @@
 # PromptFrame Creation
 
-通过自己的 Codex 推理，使用 PromptFrame 共用视频工具、作品、素材和持久任务，并与 Studio 接续同一作品。本仓是公开插件与薄桥；业务、权限、预算和账务由平台管理。
+在 Codex 或 Claude Code 中使用自己的推理，使用 PromptFrame 共用视频工具、作品、素材和持久任务，并与 Studio 接续同一作品。本仓是公开插件与薄桥；业务、权限、预算和账务由平台管理。
 
 ## 安装和连接
 
-需要 Node.js 20+ 及支持插件的 Codex（最低0.160.0）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
+需要 Node.js 20+，以及支持插件的 Codex（最低0.160.0）或 Claude Code（最低2.0.12，提供结构化插件命令）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.0 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
-每次从 Studio 获取当前固定推荐版本；入口比较已安装版本，较新版本保留，不后台追踪 latest。入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后在同一主机开一个 **Local 新聊天**（CLI 开新 session），确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。可以选择独立的非 Git 创作目录，不需要产品源码或 Worktree；不必重新安装或获取 Token。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
+Claude Code 使用同一安装入口并加 `--host claude-code`；桌面版远程连接 WSL 时在同一 WSL 执行。每次从 Studio 获取当前固定推荐版本；入口比较已安装版本，较新版本保留，不后台追踪 latest。入口检查环境、准备用户级版本、注册并核回 Codex 插件，复用有效凭据；首次 Token 在终端隐藏输入，不粘进聊天。完成后在同一主机开始新聊天：Codex 使用 **Local 新聊天**（CLI 开新 session），Claude Code 使用新 session。确认 `creation-setup`、`video-creation` 与 MCP 工具一起加载。可以选择独立的非 Git 创作目录，不需要产品源码或 Worktree；不必重新安装或获取 Token。安装本身不接管作品、不启动付费制作。`npx` 单独运行或目录连通不等于当前聊天已加载插件。
 
 [0.2.7](docs/releases/0.2.7.md)支持在 Studio 或另一聊天编辑作品时读取平台用量；[0.2.6](docs/releases/0.2.6.md)统一安装指令的版本和固定 Git 来源诊断；[0.2.5](docs/releases/0.2.5.md)新增项目只读入门和 Skill 说明读取。安装版本以 Studio 的固定推荐为准，已安装的较新版本不会降级。0.2.4 的安装发现、登记异常处理和新聊天指引见[版本说明](docs/releases/0.2.4.md)。
 
@@ -20,7 +20,7 @@ API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置�
 
 ## 源码、包和宿主范围
 
-当前开发源码增加 Claude Code 插件适配。可在构建后使用 `node bin/promptframe-creation.mjs connect --host claude-code --endpoint <API地址>`；公开0.2.7仍使用上方 Codex 安装入口。Claude Code 的源码接线、后续 npm 版本和真实桌面会话分别核实，详见[安装说明](docs/installing.md#claude-code源码接入)。
+[0.3.0](docs/releases/0.3.0.md)增加 Claude Code 接入、平台动态工具发现、标准内容与版本化指引，以及新会话的兼容版本选择。已有0.2.x插件保持其安装来源；升级和新会话加载见[安装说明](docs/installing.md#claude-code接入)。
 
 | 版本或层次 | 适用范围 |
 | --- | --- |

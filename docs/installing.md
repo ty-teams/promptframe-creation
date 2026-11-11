@@ -1,12 +1,12 @@
 # 安装、连接与升级
 
-需要 Node.js 20+、支持插件命令的 Codex（本版最低0.160.0），以及可以访问 Studio 的网络。原生 Windows ACL 尚未验证；Linux、WSL、macOS 使用用户目录和私有文件权限，不需要 sudo。
+需要 Node.js 20+，支持插件命令的 Codex0.160.0+ 或 Claude Code2.0.12+，以及可以访问 Studio 的网络。原生 Windows ACL 尚未验证；Linux、WSL、macOS 使用用户目录和私有文件权限，不需要 sudo。
 
 从 Studio 的“连接与授权”复制当前环境的指引。在本机终端执行：
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.0 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -20,13 +20,15 @@ npx --yes @promptframe/creation@0.2.7 connect --endpoint <Studio提供的API地�
 
 安装输出分别报告插件已安装、已启用、平台凭据连接已核验；`hostMcpConnected` 与 `sessionLoaded` 在安装器中仍为 `not_verified`。当前聊天是否已加载，要由该聊天实际发现 Skill 和调用 MCP 只读工具验证。若宿主将来提供明确受支持的同会话刷新入口，也须同时核回这两类能力后才能报告加载成功。
 
-## Claude Code 源码接入
+## Claude Code 接入
 
-当前开发源码支持 `connect --host claude-code`，需要 Node.js20+ 和提供结构化插件命令的 Claude Code2.0.12+；公开0.2.7的安装入口仍为 Codex。源码构建后，在 Claude Code 所在主机运行：
+在 Claude Code 所在主机使用同一固定包和独立宿主参数。桌面版连接 WSL 时，在该 WSL 运行：
 
+<!-- creation-install-command -->
 ```bash
-node bin/promptframe-creation.mjs connect --host claude-code --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.0 connect --host claude-code --endpoint <Studio提供的API地址>
 ```
+<!-- /creation-install-command -->
 
 CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别同一用户桌面端管理的实际远程构建。可用 `--claude-bin <绝对可执行文件>` 明确指定入口。不会启动 Claude 模型会话或固定桌面构建文件名。
 
@@ -44,7 +46,7 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.2.7 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.3.0 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -52,7 +54,7 @@ npx --yes @promptframe/creation@0.2.7 connect --profile work-account --endpoint 
 
 ## 版本与失败
 
-当前源码支持在新会话启动时，根据平台给出的最低和推荐版本选择兼容的固定 npm 包。包从官方 registry 获取并校验完整性，已校验缓存可以复用；Token、profile 和会话身份保持。可在桥启动配置中加 `--bridge-version X.Y.Z` 锁定版本，锁定低于最低要求时会明确拒绝。获取失败时仅兼容的当前程序可继续；显式锁定失败不会悄悄使用另一个版本。活动聊天的桥不被替换，源码中的新启动能力也不会自动出现在既有旧版插件中。
+新会话启动时，根据平台给出的最低和推荐版本选择兼容的固定 npm 包。包从官方 registry 获取并校验完整性，已校验缓存可以复用；Token、profile 和会话身份保持。可在桥启动配置中加 `--bridge-version X.Y.Z` 锁定版本，锁定低于最低要求时会明确拒绝。获取失败时仅兼容的当前程序可继续；显式锁定失败不会悄悄使用另一个版本。活动聊天的桥不被替换，源码中的新启动能力也不会自动出现在既有旧版插件中。
 
 推荐版本由 Studio 当前连接指引提供，入口每次对照命令中的固定版本检查安装。同版本复用；受管旧版准备新版并切换后续入口；已安装更新版返回 `newer_retained`，不降级。没有后台自动追踪 latest；再次连接时从 Studio 复制当前指令，不沿用旧聊天中的版本。
 
