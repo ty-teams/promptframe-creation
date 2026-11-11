@@ -32,7 +32,9 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 两个宿主共用所选 profile 的安全凭据，插件登记和版本目录独立。Claude 适配通过官方 user-scope 本地 marketplace/install 命令注册，再读取完整插件身份、实际版本目录、MCP 定义和文件摘要；当前聊天是否加载仍需在同一主机的新 Claude Code session 检查两个 Skill 与 MCP。安装期间不会替换活动桥或清理旧版本。登记回程未知时只核原身份，不能重复 install 或改用另一登记方式。已有同名手工 MCP、其它来源或不明目录需要先核实，不自动覆盖。
 
-本机隔离检查覆盖 CLI 插件登记与版本复用；桌面版真实加载、恢复会话和编辑权仍单独验证。原生 Windows ACL 尚未验证。插件命令不可用时的独立 MCP 与 Skill 安装路径仍在开发，不将单独登记 MCP 报为插件已安装。
+本机隔离检查覆盖 CLI 插件登记与版本复用；桌面版真实加载、恢复会话和编辑权仍单独验证。原生 Windows ACL 尚未验证。
+
+启动帮助明确不提供插件命令时，安装器使用官方 user-scope MCP 登记并准备两份用户 Skill。返回 `installationMode: mcp-and-skills`、`pluginInstalled: false` 与实际 Skill 名称；不同 profile 分开命名，原凭据保持。MCP 写后从本地配置核回，不通过 `mcp list/get` 启动健康检查。已有陌生 MCP/Skill 或未确认的插件安装不会转到备用路径；备用 MCP 的回程未知也只核原身份，不重复 add。以后宿主增加插件命令时保留现有备用登记，避免同一 profile 两份连接。
 
 ## 环境与账号
 

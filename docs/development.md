@@ -9,6 +9,7 @@
 | 命令和 stdio 桥 | `bin/promptframe-creation.mjs`预检 → `lib/cli.mjs` / `dist/cli.mjs`自包含构建 |
 | 用户级安装与profile | `lib/user-installation.mjs` |
 | Claude Code 本机入口和插件登记 | `lib/claude-command.mjs`、`lib/claude-installation.mjs` |
+| Claude 独立 MCP／Skill 备用登记与本地配置读面 | `lib/claude-mcp-installation.mjs`、`lib/claude-local-state.mjs` |
 | 依赖闭包/许可证 | `scripts/build-runtime.mjs` |
 | 环境地址与安全凭据 | `lib/credentials.mjs` |
 | 平台 MCP HTTP 连接 | `lib/connection.mjs` |

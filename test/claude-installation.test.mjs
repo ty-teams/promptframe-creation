@@ -24,6 +24,7 @@ async function fixture(){
   let plugins=[],markets=[],marketAdds=0,installs=0,checks=0,loss=null,failInstall=false;
   const runClaude=async args=>{
     if(args[0]==='--version')return '2.1.321 (Claude Code)\n';
+    if(args[0]==='--help')return 'Commands:\n  plugin|plugins  Manage plugins\n  mcp  Manage servers\n';
     if(args.join(' ')==='plugin list --json')return JSON.stringify(plugins);
     if(args.join(' ')==='plugin marketplace list --json')return JSON.stringify(markets);
     if(args.slice(0,3).join(' ')==='plugin marketplace add'){
