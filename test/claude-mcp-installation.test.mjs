@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {installForClaudeUser} from '../lib/claude-installation.mjs';
 import {profileCredentialsPath} from '../lib/user-installation.mjs';
 import {installationFiles} from '../lib/user-installation.mjs';
-import {installClaudeMcpFallback} from '../lib/claude-mcp-installation.mjs';
+import {installClaudeMcpFallback,claimSkillDirectory} from '../lib/claude-mcp-installation.mjs';
 
 const source=fileURLToPath(new URL('..',import.meta.url));
 const json=async file=>JSON.parse(await readFile(file,'utf8'));
@@ -123,5 +123,17 @@ test('a different local MCP registration appearing during Skill preparation is n
     }}),/registration_unconfirmed_keep_existing/);
     assert.equal(f.counts().adds,0);
     assert.equal((await json(path.join(f.env.CLAUDE_CONFIG_DIR,'.claude.json'))).mcpServers.promptframe.command,'new-foreign-owner');
+  }finally{await f.close();}
+});
+
+test('new Skill directories are claimed exclusively; a preexisting or racing directory is never adopted',async()=>{
+  const f=await fixture();try{
+    const directory=path.join(f.root,'claimed-skill');
+    const result=await Promise.allSettled([claimSkillDirectory(directory),claimSkillDirectory(directory)]);
+    assert.equal(result.filter(r=>r.status==='fulfilled').length,1);
+    assert.match(result.find(r=>r.status==='rejected').reason.message,/claude_skill_requires_review/);
+    const file=path.join(directory,'SKILL.md');await writeFile(file,'foreign new content');
+    await assert.rejects(claimSkillDirectory(directory),/claude_skill_requires_review/);
+    assert.equal(await readFile(file,'utf8'),'foreign new content');
   }finally{await f.close();}
 });

@@ -148,6 +148,29 @@ test('reuse preserves the recorded Node command when connect runs through anothe
   }finally{await f.close();}
 });
 
+test('concurrent entries with different host capabilities cannot register both plugin and fallback for one profile',async()=>{
+  const f=await fixture();let attemptedMcp=0,delayed=false;
+  try{
+    const plugin=args=>{
+      if(args.join(' ')==='plugin list --json'&&!delayed){delayed=true;return new Promise(resolve=>setTimeout(()=>resolve(f.runClaude(args)),100));}
+      return f.runClaude(args);
+    };
+    const fallback=args=>{
+      if(args[0]==='--help')return Promise.resolve('Commands:\n  mcp Manage servers\n');
+      if(args[0]==='mcp'){attemptedMcp++;throw Error('unexpected second registration mode');}
+      return f.runClaude(args);
+    };
+    const first=installForClaudeUser({sourceRoot:source,env:f.env,runClaude:plugin,checkRuntime:f.checkRuntime});
+    // The first entry acquires its own mode guard before the second starts.
+    for(let i=0;i<100&&!delayed;i++)await new Promise(resolve=>setTimeout(resolve,1));
+    const second=installForClaudeUser({sourceRoot:source,env:f.env,runClaude:fallback,checkRuntime:f.checkRuntime});
+    const results=await Promise.allSettled([first,second]);
+    assert.equal(results[0].status,'fulfilled');assert.equal(results[1].status,'rejected');
+    assert.match(results[1].reason.message,/registration_unconfirmed_keep_existing/);
+    assert.equal(attemptedMcp,0);assert.equal(f.counts().installs,1);
+  }finally{await f.close();}
+});
+
 test('Desktop remote command discovery uses actual version filenames and refuses ambiguous highest builds',async()=>{
   const root=await mkdtemp(path.join(os.tmpdir(),'creation-claude-path-'));
   try{
