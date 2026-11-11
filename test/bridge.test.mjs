@@ -94,7 +94,12 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
               control: { controlVersion: 999, editor: { kind: "client", isCurrentClient: true } },
             }),
           },
+          {type:'image',mimeType:'image/png',data:'iVBORw0KGgo='},
+          {type:'audio',mimeType:'audio/wav',data:'UklGRg=='},
+          {type:'resource_link',uri:'promptframe://resources/own-001',name:'Own output'},
+          {type:'resource',resource:{uri:'promptframe://resources/own-002',text:'Own bounded resource'}},
         ],
+        structuredContent:{taskId:'own-protocol-task',deadlineAt:'2030-01-01T00:00:00.000Z'},
       };
     });
     const transport = new StreamableHTTPServerTransport({
@@ -200,6 +205,10 @@ test("secure setup reuses the grant and stdio forwards an unchanged persistent-t
     assert.equal(calls[0].name, "platform_describe_tool");
     assert.equal(calls[0]._meta.threadId, threadA);
     assert.equal(value.taskId, "own-protocol-task");
+    assert.deepEqual(result.content.map(x=>x.type),['text','image','audio','resource_link','resource']);
+    assert.equal(result.content[1].data,'iVBORw0KGgo=');
+    assert.equal(result.content[2].data,'UklGRg==');
+    assert.equal(result.structuredContent.taskId,'own-protocol-task');
     assert.equal(value.status, "waiting");
     assert.equal(value.originalDeadline, "2030-01-01T00:00:00.000Z");
     await client.callTool(request);
