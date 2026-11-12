@@ -4,11 +4,11 @@
 
 ## 安装和连接
 
-需要 Node.js 20+，以及支持插件的 Codex（最低0.160.0）或 Claude Code（最低2.0.12，提供结构化插件命令）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
+需要 Node.js 20+，以及支持插件的 Codex（最低0.160.0）或 Claude Code（最低2.1.295，提供结构化插件命令）。在 Studio 的“连接与授权”复制当前环境 API 地址，然后在本机终端执行：
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.0 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.1 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -20,7 +20,7 @@ API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置�
 
 ## 源码、包和宿主范围
 
-[0.3.0](docs/releases/0.3.0.md)增加 Claude Code 接入、平台动态工具发现、标准内容与版本化指引，以及新会话的兼容版本选择。已有0.2.x插件保持其安装来源；升级和新会话加载见[安装说明](docs/installing.md#claude-code接入)。
+[0.3.1](docs/releases/0.3.1.md)修复 Claude 会话身份更新；[0.3.0](docs/releases/0.3.0.md)增加 Claude Code 接入、平台动态工具发现、标准内容与版本化指引，以及新会话的兼容版本选择。已有0.2.x插件保持其安装来源；升级和新会话加载见[安装说明](docs/installing.md#claude-code接入)。
 
 | 版本或层次 | 适用范围 |
 | --- | --- |

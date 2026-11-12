@@ -31,7 +31,7 @@ test('standard reads keep host identity, content and version while avoiding edit
   assert.deepEqual(await bridge.readResource({uri}),result(1));
   version=2;assert.deepEqual(await bridge.readResource({uri}),result(2));await Promise.resolve();
   assert.deepEqual(notified,['resources']);assert.equal(seen.length,2);
-  assert.deepEqual(seen[0],{uri,_meta:{threadId:threadA}});
+  assert.deepEqual(seen[0],{uri});
   await bridge.getPrompt({name:'video-creation',arguments:{projectId:'project-a'}});
   await assert.rejects(bridge.readResource({uri,_meta:{threadId:threadA}}),/creation.transport_authority_managed_by_bridge/);
   assert.equal(seen.length,3,'forged host metadata never reaches the upstream reader');
@@ -109,7 +109,7 @@ test('built stdio bridge forwards standard resources/prompts, safe errors and ob
       assert.deepEqual(error.data,{errorCode:'creation.connection_unresolved'});
       assert.match(String(error),/creation.connection_unresolved/);assert.doesNotMatch(String(error),/private-credential/);return true;
     });
-    assert.ok(seen.every(p=>p?._meta?.threadId===threadA));
+    assert.ok(seen.every(p=>p?._meta?.threadId===undefined),'independent knowledge never binds a stale startup UUID');
     assert.deepEqual(JSON.parse(requests.find(p=>p.method==='initialize').types),['text']);
     assert.equal(requests.find(p=>p.method==='initialize').source,'text-fallback');
     assert.ok(requests.filter(p=>p.method==='resources/read').every(p=>p.source==='declared'

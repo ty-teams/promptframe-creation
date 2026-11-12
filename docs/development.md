@@ -36,13 +36,17 @@
 
 当前源码按平台握手结果提供标准 resources/prompts 读取。项目公开指引复用平台已验证的创作基线；资源 URI 由平台解析，每次读取重新检查账号和项目权限。带版本的引用遇到正文版本变化会提示重新列取，不静默替换内容。桥保留标准正文和元数据，按序列化 UTF-8 计算单块400000字节、整次2000000字节上限；超限不会重执行业务。后续正常读取观察到版本变化时发送对应目录通知，不启动后台轮询。未声明这些能力的平台仍可通过原工具入口读取入门说明。源码能力、公开包和宿主实际支持分别核实。
 
-当前源码在新会话启动时读取平台初始化中的 `experimental.promptframe.creation` 兼容声明。在接收宿主工具调用前，按真实版本检查 `minBridge`，从官方 npm registry 获取固定的 `recommendedBridge`；`--bridge-version X.Y.Z` 可锁定一个兼容版本。下载只允许公开的 `@promptframe/creation` 固定版本，核 SHA-512 integrity、包身份及自包含运行文件后，再原子放入私有缓存。缓存按完整文件摘要复核，同版本不能更换完整性摘要，准备过程不运行安装脚本或注册宿主。新进程继承同一凭据路径和冻结的宿主会话身份，活动桥不被替换。
+当前源码在新会话启动时读取平台初始化中的 `experimental.promptframe.creation` 兼容声明。在接收宿主工具调用前，按真实版本检查 `minBridge`，从官方 npm registry 获取固定的 `recommendedBridge`；`--bridge-version X.Y.Z` 可锁定一个兼容版本。下载只允许公开的 `@promptframe/creation` 固定版本，核 SHA-512 integrity、包身份及自包含运行文件后，再原子放入私有缓存。缓存按完整文件摘要复核，同版本不能更换完整性摘要，准备过程不运行安装脚本或注册宿主。新进程继承同一凭据路径和宿主种类，活动桥不被替换。宿主 hook 随插件安装，不由运行文件选择器更新。
 
 获取或校验失败时，只有当前程序已经达到已知最低版本才可继续；显式锁定失败不会另选版本。平台缺少兼容声明时提示先更新平台。缓存位于安全凭据目录下的 `runtime-cache`，不会自动删除旧版本或清除不明准备锁。新运行进程启动后的错误不会触发第二次桥启动。
 
 外部宿主可在初始化声明 `experimental.promptframe.contentTypes`，桥只转发已知种类，未声明时使用明确的文字降级。媒体能力来自宿主声明，不从模型或宿主名称推断；真实桌面是否展示图片、音频和资源仍需分别验证。源码、公开包及实际宿主加载分别核实。
 
-`bridge --host codex`使用宿主提供的threadId；`bridge --host claude-code`使用启动环境中的`CLAUDE_CODE_SESSION_ID`。未指定host时，`CLAUDECODE=1`选择Claude Code，其余选择Codex。Claude会话ID缺失时，本进程使用临时UUID；下次启动不能据此保留原编辑身份。无效会话ID会报错，不从调用参数接受替代值。公开发行与两种桌面宿主的实际加载分别核实。
+`bridge --host codex`使用宿主提供的threadId。Claude通过同步SessionStart/PreToolUse hook取得当前session_id；每个调用的单次本机凭证绑定工具、参数和当前代次，桥在转发前移除，模型提供的身份字段不能代替它。`/clear`或fork更新身份，resume保留同一UUID，compact不切换控制者。启动环境仅用于识别宿主种类，缺少可信身份时不随机生成或退回旧值：独立读取仍按平台目录与ACL执行，受控和权威操作明确拒绝。
+
+Linux/WSL原生CLI关联沿实际进程祖先、boot/birth、UID和原生可执行文件核验，不假定直接父进程。私有状态使用0700目录、0600无symlink文件与原子fsync写入；旧hook写入和旧代次响应不能回写当前控制缓存。正常SessionEnd清理本进程命名空间；异常残留不能供另一个进程认领。MCP+Skill备用安装只管理自身的精确hook项，保留其它设置，编辑冲突和未知写回执先读取原状态。
+
+PreToolUse hook不替用户批准工具。Claude的auto模式可能先审核hook补入的输入；同一个尚未使用的精确凭证可在该审核重试时保留，实际调用后不可重放。包发行、hook安装、桌面实际会话与模型收图分别验证。
 
 源码经 GitHub Actions 打包发行到 npm；插件目录记录包名/版本或源码位置。安装后，Codex 加载本地副本并按配置启动 Node 桥；桥通过 stdio 接收调用，读取独立安全配置，再通过 HTTPS MCP 连接所选平台。GitHub、npm 与目录索引负责获取版本，不进入正常工具调用链。Token 不进入源码、插件包或命令参数。
 

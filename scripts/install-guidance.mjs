@@ -9,7 +9,7 @@ export function installGuidanceManifest(version){
   hosts:[
    {kind:'codex',name:'Codex',minimumBridge:'0.2.3',requirements:'Node.js 20+ 与支持插件的 Codex（最低0.160.0）',
     commandArgs:['connect','--endpoint','{{endpoint}}'],nextSession:'在同一主机打开 Local 新聊天；CLI 使用新 session。'},
-   {kind:'claude-code',name:'Claude Code',minimumBridge:'0.3.0',requirements:'Node.js 20+ 与 Claude Code 2.0.12+，或桌面版提供的同机远程入口',
+   {kind:'claude-code',name:'Claude Code',minimumBridge:'0.3.1',requirements:'Node.js 20+ 与 Claude Code 2.1.295+；受控会话身份使用 Linux/WSL 原生 CLI 或桌面版的同机远程入口',
     commandArgs:['connect','--host','claude-code','--endpoint','{{endpoint}}'],nextSession:'在同一主机开始新的 Claude Code session；桌面版远程连接 WSL 时在该 WSL 安装。'},
   ],
   versionInstructions:'比较已安装版本：同版本复用，更新版本不降级；待升级或 Node 不可用时按明确指引处理，不把旧版复用当作升级成功。',

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "creation-install-guidance/v1",
   "package": "@promptframe/creation",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "hosts": [
     {
       "kind": "codex",
@@ -18,8 +18,8 @@
     {
       "kind": "claude-code",
       "name": "Claude Code",
-      "minimumBridge": "0.3.0",
-      "requirements": "Node.js 20+ 与 Claude Code 2.0.12+，或桌面版提供的同机远程入口",
+      "minimumBridge": "0.3.1",
+      "requirements": "Node.js 20+ 与 Claude Code 2.1.295+；受控会话身份使用 Linux/WSL 原生 CLI 或桌面版的同机远程入口",
       "commandArgs": [
         "connect",
         "--host",

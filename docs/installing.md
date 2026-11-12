@@ -1,12 +1,12 @@
 # 安装、连接与升级
 
-需要 Node.js 20+，支持插件命令的 Codex0.160.0+ 或 Claude Code2.0.12+，以及可以访问 Studio 的网络。原生 Windows ACL 尚未验证；Linux、WSL、macOS 使用用户目录和私有文件权限，不需要 sudo。
+需要 Node.js 20+，支持插件命令的 Codex0.160.0+ 或 Claude Code2.1.295+，以及可以访问 Studio 的网络。原生 Windows ACL 尚未验证；Linux、WSL、macOS 使用用户目录和私有文件权限，不需要 sudo。
 
 从 Studio 的“连接与授权”复制当前环境的指引。在本机终端执行：
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.0 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.1 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -26,7 +26,7 @@ npx --yes @promptframe/creation@0.3.0 connect --endpoint <Studio提供的API地�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.0 connect --host claude-code --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.1 connect --host claude-code --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -46,7 +46,7 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.0 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.3.1 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 

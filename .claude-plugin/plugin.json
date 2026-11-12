@@ -1,10 +1,60 @@
 {
   "name": "promptframe-creation",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "通过 PromptFrame 的共用工具、作品和任务创作视频。",
   "author": {
     "name": "PromptFrame"
   },
   "skills": "./skills/",
-  "mcpServers": "./.claude-mcp.json"
+  "mcpServers": "./.claude-mcp.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|fork|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/bin/promptframe-creation.mjs",
+              "claude-host-hook"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^mcp__plugin_promptframe-creation_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/bin/promptframe-creation.mjs",
+              "claude-host-hook"
+            ],
+            "timeout": 5,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/bin/promptframe-creation.mjs",
+              "claude-host-hook"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }

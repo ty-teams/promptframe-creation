@@ -83,16 +83,17 @@ test('catalog change notifications are observation driven, ordered and separate 
   outer=2;await bridge.listTools();await new Promise(r=>setImmediate(r));assert.equal(notices,2);
 });
 
-test('Claude identity uses only the frozen desktop UUID; absent fallback is per process',async()=>{
+test('Claude startup environment never grants a frozen or random controller; unknown identity keeps independent reads',async()=>{
   const host=resolveHostIdentity({env:{CLAUDECODE:'1',CLAUDE_CODE_SESSION_ID:threadA.toUpperCase()}});
-  assert.equal(host.threadId,threadA);
+  assert.equal(host.threadId,undefined);
   assert.deepEqual(host,resolveHostIdentity({env:{CLAUDECODE:'1',CLAUDE_CODE_SESSION_ID:threadA}}));
-  assert.notEqual(resolveHostIdentity({env:{CLAUDECODE:'1'}}).threadId,resolveHostIdentity({env:{CLAUDECODE:'1'}}).threadId);
+  assert.equal(resolveHostIdentity({env:{CLAUDECODE:'1'}}).threadId,undefined);
   assert.throws(()=>resolveHostIdentity({host:'unknown'}),/creation.host_unsupported/);
-  assert.throws(()=>resolveHostIdentity({env:{CLAUDECODE:'1',CLAUDE_CODE_SESSION_ID:'bad'}}),/creation.host_identity_invalid/);
+  assert.equal(resolveHostIdentity({env:{CLAUDECODE:'1',CLAUDE_CODE_SESSION_ID:'bad'}}).threadId,undefined);
   let sent;
   const bridge=createHostCallBridge({listTools:async()=>directory(),callTool:async p=>{sent=p;return result({},wire(p,{host:'claude-code'}));}},{credentials,host});
-  await bridge.call({name:'platform_read_session',arguments:scope});assert.equal(sent._meta.threadId,threadA);
+  await bridge.call({name:'platform_read_session',arguments:scope});assert.equal(sent._meta?.threadId,undefined);
+  await assert.rejects(bridge.call({name:'platform_create_session',arguments:scope}),/creation.host_identity_unavailable/);
   await assert.rejects(bridge.call(request('platform_read_session')),/creation.transport_authority_managed_by_bridge/);
 });
 
