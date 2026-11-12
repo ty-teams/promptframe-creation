@@ -8,7 +8,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.3 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.4 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -17,6 +17,12 @@ Claude Code 使用同一安装入口并加 `--host claude-code`；桌面版远�
 [0.2.7](docs/releases/0.2.7.md)支持在 Studio 或另一聊天编辑作品时读取平台用量；[0.2.6](docs/releases/0.2.6.md)统一安装指令的版本和固定 Git 来源诊断；[0.2.5](docs/releases/0.2.5.md)新增项目只读入门和 Skill 说明读取。安装版本以 Studio 的固定推荐为准，已安装的较新版本不会降级。0.2.4 的安装发现、登记异常处理和新聊天指引见[版本说明](docs/releases/0.2.4.md)。
 
 API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置生产/私有地址。远程客户端不要改成自己的 localhost。另一个环境或账号显式使用 `--profile <名称>`；新旧桥各固定凭据路径，不热切环境。有效 Token 不因升级、新作品或接管轮换。详细安装、升级保旧、卸载和排障见[安装说明](docs/installing.md)。Linux、WSL、macOS 使用0700目录/0600凭据；原生Windows ACL尚未验证。
+
+## 本机素材
+
+平台目录提供本机上传入口时，0.3.4桥可将用户明确选择的图片、音频、视频或文档流式直传到该上传会话授权的对象存储。桥只读取指定文件，不扫描目录、不把文件字节放进MCP消息，也不改变作品编辑权或制作确认。
+
+文件必须在桥所在机器可读；远程WSL或SSH中的桥不会自动获得桌面路径。返回结果说明实际文件宿主、原上传ID和幂等键。中断后保留同一键查询或显式恢复；取消同一会话，不另建替代上传。上传、内容校验和素材ready分别显示，ready后可在同一Studio项目使用。
 
 ## 源码、包和宿主范围
 
