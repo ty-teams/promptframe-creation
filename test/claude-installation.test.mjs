@@ -89,6 +89,29 @@ test('an unknown install is never retried, downgraded or replaced by an MCP fall
   }finally{await f.close();}
 });
 
+test('an acknowledged local folder is adopted after lost ACK even when Desktop retains an older cache version',async()=>{
+  const f=await fixture();try{
+    const options={sourceRoot:source,env:f.env,runClaude:f.runClaude,checkRuntime:f.checkRuntime};
+    f.setLoss('plugin');
+    await assert.rejects(installForClaudeUser(options),/registration_unconfirmed_keep_existing/);
+    const root=path.join(f.env.XDG_DATA_HOME,'promptframe-creation/default/claude-code');
+    const pending=await json(path.join(root,'registration-pending.json'));
+    const counts=f.counts();
+    const installed={id:pending.pluginId,scope:'user',version:'0.3.0',enabled:true,
+      installPath:path.join(f.root,'claude-cache','0.3.0'),readFromFolder:pending.versionRoot,folderVersion:pending.version};
+    f.setPlugins([installed]);
+    const result=await installForClaudeUser(options);
+    assert.equal(result.version,pending.version);assert.equal(result.versionRoot,pending.versionRoot);
+    assert.deepEqual(f.counts(),counts,'confirmed folder adoption must not send another registration');
+    await assert.rejects(readFile(path.join(root,'registration-pending.json')),{code:'ENOENT'});
+    for(const change of [{folderVersion:'invalid'},{readFromFolder:path.join(f.root,'foreign')}]){
+      f.setPlugins([{...installed,...change}]);
+      await assert.rejects(installForClaudeUser(options),/requires_review|local_registration_unconfirmed/);
+      assert.deepEqual(f.counts(),counts);
+    }
+  }finally{await f.close();}
+});
+
 test('scope/source/disabled foreign plugins, legacy MCP and malformed local state never become absence',async()=>{
   for(const change of[{id:'promptframe-creation@foreign',version:'0.3.0',enabled:true,scope:'user',installPath:'/unknown'},
     {id:'promptframe-creation@promptframe-creation-user',version:'0.3.0',enabled:true,scope:'project',installPath:'/unknown'}]){
