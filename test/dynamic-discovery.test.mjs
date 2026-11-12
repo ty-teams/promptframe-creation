@@ -48,6 +48,23 @@ test('directory roles can change names; missing and unknown category never fall 
   }
 });
 
+test('trusted scope defaults normalize describe, dispatch and repeated requests without changing caller input',async()=>{
+  const f=fixture();
+  f.client.callTool=async p=>{f.calls.push(p);return result({},wire(p,p.name==='platform_describe_tool'?{
+    resolvedAccess:{tool:p.arguments.tool,access:'independent-read',scopeDefaults:scope,
+      argumentsDigest:inputDigest({...p.arguments.arguments,...scope})}}:{}));};
+  const input=request('platform_call_tool',{tool:'scoped_read',arguments:{frame:1}});
+  await f.bridge.call(input);await f.bridge.call(input);
+  assert.deepEqual(input.arguments.arguments,{frame:1});
+  const sent=f.calls.filter(p=>p.name==='platform_call_tool');assert.equal(sent.length,2);
+  assert.deepEqual(sent[0].arguments.arguments,{frame:1,...scope});assert.deepEqual(sent[1].arguments,sent[0].arguments);
+  for(const defaults of [{projectId:'other'},{token:'untrusted'},{sessionId:null},['own-work']]){
+    const bad=fixture({transform:v=>({...v,resolvedAccess:{...v.resolvedAccess,scopeDefaults:defaults}})});
+    await assert.rejects(bad.bridge.call(input),/creation.access_unverified/);
+    assert.equal(bad.calls.length,1);
+  }
+});
+
 test('a newer Web ownership response blocks an older owned result and later old error',async()=>{
   let finishOld,finishError,version=2;const calls=[];
   const client={listTools:async()=>({tools:[descriptor('read','independent-read'),descriptor('write','controlled',{},true)]}),callTool:async p=>{
