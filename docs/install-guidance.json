@@ -1,7 +1,7 @@
 {
   "schemaVersion": "creation-install-guidance/v1",
   "package": "@promptframe/creation",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "hosts": [
     {
       "kind": "codex",

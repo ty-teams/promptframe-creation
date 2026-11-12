@@ -45,6 +45,27 @@ test('only host initialize capabilities declare media support; missing/unknown c
     {types:['text'],source:'text-fallback'});
 });
 
+test('completed MCP initialization retains standard image/resource results without a private extension',()=>{
+  // Captured Claude 2.1.321 initialize: roots + elicitation, protocol 2025-11-25.
+  const capabilities={roots:{listChanged:true},elicitation:{form:{},url:{}}};
+  assert.deepEqual(declaredHostContentCapabilities(capabilities),{types:['text'],source:'text-fallback'});
+  assert.deepEqual(declaredHostContentCapabilities(capabilities,{initialized:true,standardContent:true}),
+    {types:['text','image','resource'],source:'mcp-protocol'});
+  assert.deepEqual(declaredHostContentCapabilities(capabilities,{initialized:true}),
+    {types:['text'],source:'text-fallback'},'an older platform never receives an unsupported capability-source header');
+  assert.deepEqual(declaredHostContentCapabilities({experimental:{'promptframe.contentTypes':['text']}},{initialized:true,standardContent:true}),
+    {types:['text'],source:'declared'},'explicit host limits override the standard baseline');
+  assert.deepEqual(declaredHostContentCapabilities({experimental:{'promptframe.contentTypes':['image','unknown']}},{initialized:true,standardContent:true}),
+    {types:['text'],source:'text-fallback'},'a malformed explicit declaration is not replaced by broader support');
+});
+
+test('only an authenticated compatible platform enables standard result negotiation',()=>{
+  const next={...policy,standardContentTypes:['text','image','resource']};
+  assert.deepEqual(readPlatformBridgePolicy({experimental:{'promptframe.creation':next}}),next);
+  for(const types of [true,['text','image'],['text','image','audio'],['text','image','resource','resource']])
+    assert.throws(()=>readPlatformBridgePolicy({experimental:{'promptframe.creation':{...next,standardContentTypes:types}}}),/creation.bridge_policy_invalid/);
+});
+
 test('real authenticated initialize rejects a higher minimum before any tool call without fetching another package',async()=>{
   const nextMajor=(Number(CLIENT_VERSION.split('.')[0])+1)+'.0.0';
   let minimum=nextMajor,lists=0;const seen=[];

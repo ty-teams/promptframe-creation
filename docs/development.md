@@ -71,3 +71,5 @@ PreToolUse hook不替用户批准工具。Claude的auto模式可能先审核hook
 宿主插件已安装/启用、平台连接验证与聊天加载分别报告。外部安装器不接私有 app-server 生产刷新通道；当前使用官方新聊天/新 session 路径，选择 Local 和独立非 Git 目录即可。候选包、公共 registry 固定包和真实宿主新聊天工具/两个 Skill 的验收分开记录。
 
 Claude Code 使用官方 `plugin list --json` 与 `plugin marketplace list --json` 读取登记，不调用会健康检查 MCP 的 `mcp list/get`。本地 marketplace 的 `readFromFolder/folderVersion` 表示实际读取目录，其folderVersion与安装记录的缓存版本可不同；按实际目录版本和完整性核对；版本目录及两份 MCP 定义均验证摘要。每个登记写前保存阶段，回程未知后只观察原身份。隔离 CLI 安装不等于桌面模型会话加载。
+
+标准 MCP 初始化后的图片和嵌入资源表示由平台的 `standardContentTypes` 协商启用。缺少该字段的平台继续使用文字降级；显式宿主限制优先。表示选择不改变会话身份、素材权限或业务调用次数。

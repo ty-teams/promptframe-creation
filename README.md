@@ -8,7 +8,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.2 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.3 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
