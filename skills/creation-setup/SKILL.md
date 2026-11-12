@@ -10,11 +10,11 @@ description: 安装、连接或升级 PromptFrame Creation，复用平台创作�
 先确认使用 Codex 还是 Claude Code。Claude 接入使用 `connect --host claude-code`，两种宿主可共用同一 profile 凭据，插件登记分别核实。使用 Studio 对当前环境提供的固定版本；旧版入口不会因平台更新自动改变。Claude 桌面版远程连接 WSL 时，在同一 WSL 安装；没有终端命令时可通过 `--claude-bin <实际可执行文件>` 指定桌面版提供的入口，不固定桌面构建文件名。
 
 <!-- creation-install-command -->
-在用户本机终端运行 `npx --yes @promptframe/creation@0.3.4 connect --endpoint <Studio提供的API地址>`。需要隔离另一个环境或账号时显式加 `--profile <用户选择的名称>`；正在运行的桥不会切换。此命令管理用户级版本和 Codex 插件，不向当前项目安装依赖。优先使用 Studio 当前提供的固定推荐版本；每次重新进入此入口比较已安装版本，不后台追踪 latest，也不把旧聊天里的命令当最新版本。已安装更新版不默认降级。
+在用户本机终端运行 `npx --yes @promptframe/creation@0.3.5 connect --endpoint <Studio提供的API地址>`。需要隔离另一个环境或账号时显式加 `--profile <用户选择的名称>`；正在运行的桥不会切换。此命令管理用户级版本和 Codex 插件，不向当前项目安装依赖。优先使用 Studio 当前提供的固定推荐版本；每次重新进入此入口比较已安装版本，不后台追踪 latest，也不把旧聊天里的命令当最新版本。已安装更新版不默认降级。
 <!-- /creation-install-command -->
 
 <!-- creation-install-command -->
-Claude Code 使用 `npx --yes @promptframe/creation@0.3.4 connect --host claude-code --endpoint <Studio提供的API地址>`。桌面版远程连接 WSL 时，在该 WSL 执行；保留相同 profile 和有效凭据。
+Claude Code 使用 `npx --yes @promptframe/creation@0.3.5 connect --host claude-code --endpoint <Studio提供的API地址>`。桌面版远程连接 WSL 时，在该 WSL 执行；保留相同 profile 和有效凭据。
 <!-- /creation-install-command -->
 
 命令会复用并验证有效凭据。首次授权或明确更换已失效凭据时，由用户在 Studio 登录并在终端的不回显输入框提供 Token；不要要求用户把 Token 粘进聊天，也不要把它写进命令参数、URL或日志。网络失败不等于授权失效，不自动轮换或覆盖凭据。
