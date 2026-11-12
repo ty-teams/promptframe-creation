@@ -83,3 +83,5 @@ Claude Code 使用官方 `plugin list --json` 与 `plugin marketplace list --jso
 桥关闭时中止并等待本地传输、控制请求和文件IO；不隐式取消平台上传。正常取消沿原上传身份提交。每次正常访问时有界回收超过上传到期24小时的本地记录，活跃本地锁受保护；对象和已被引用资产只由平台既有生命周期清理。崩溃残留锁在Linux只凭精确boot/进程birth确认已退后恢复，其它平台无法确认时明确拒绝，不按PID猜测或自动覆盖锁。
 
 完成阶段若已处于 `uploaded_unverified`，或已finalized但最小派生尚未入队，显式resume沿原completeKey、完整parts和原upload/asset重接complete，不请求分片resume或再次PUT。可不再选择本地文件；若同时给出文件，仍核原文件身份/内容。原会话和文件期限不延长。只读status不修复队列，丢失恢复回执后先查原状态；已确认派生存在时不再complete。返回的阶段与本桥是否仍在传输分别说明，崩溃记录不冒活跃IO。
+
+已发PUT但缺确认的分片保持原pending身份；provider当前分片列表缺它不证明未开始，恢复不会再次PUT该分片。只有原分片后来可读的完成回执，或传输模块自身记录的真实not-dispatched，才继续缺失分片。任意错误文字不构成not-dispatched；必要时只沿原会话观察或明确取消。

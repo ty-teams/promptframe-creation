@@ -6,7 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import {once} from 'node:events';
 import {openLocalUploadFile,LOCAL_UPLOAD_READ_BYTES} from '../lib/local-upload-file.mjs';
-import {uploadGrantedPart} from '../lib/local-upload-transfer.mjs';
+import {uploadGrantedPart,readPartTransferEffect} from '../lib/local-upload-transfer.mjs';
 
 async function fixture(t){
   const root=await mkdtemp(path.join(tmpdir(),'creation-part-upload-'));
@@ -71,4 +71,16 @@ test('a missing ETag remains unconfirmed and the stream stays bounded',async t=>
       return new Response(null,{status:200});
     }}),/part_receipt_unconfirmed/);
   assert.equal(calls,1);assert(maximum<=LOCAL_UPLOAD_READ_BYTES);
+});
+
+
+test('only a transport-owned pre-dispatch fact permits retry; arbitrary error text and missing ACK remain unknown',async t=>{
+  const f=await fixture(t);let calls=0,early,uncertain;
+  try{await uploadGrantedPart(f.file,f.authorization,{...f.grants[0],method:'POST'}, {...f.options,fetch:async()=>{calls++;}});}catch(error){early=error;}
+  assert.equal(readPartTransferEffect(early),'not_dispatched');assert.equal(calls,0);
+  try{await uploadGrantedPart(f.file,f.authorization,f.grants[0],{...f.options,fetch:async()=>{
+    calls++;throw Error('creation.claimed_not_dispatched');
+  }});}catch(error){uncertain=error;}
+  assert.equal(readPartTransferEffect(uncertain),'unknown');assert.equal(calls,1);
+  assert.equal(readPartTransferEffect(Object.assign(Error('not_dispatched'),{effect:'not_dispatched'})),undefined);
 });

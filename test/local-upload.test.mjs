@@ -10,7 +10,7 @@ import {CreationClientError} from '../lib/credentials.mjs';
 
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const envelope=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
-async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,completionWindow,loseRecoveryAck=false,now=Date.now}={}){
+async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,completionWindow,loseRecoveryAck=false,lostPartNotCommitted=false,now=Date.now}={}){
   const root=await mkdtemp(path.join(tmpdir(),'creation-upload-')),filePath=path.join(root,'selected.png');
   const bytes=Buffer.alloc(5*1024*1024+113,7);await writeFile(filePath,bytes);
   const parts=new Map(),calls=[],puts=[],sockets=new Set();let session,completeCalls=0,abortCalls=0,injected=false,derivationReady=true,completeKey;
@@ -18,7 +18,9 @@ async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,comp
     const number=Number(new URL(req.url,'http://local').pathname.slice(1));puts.push(number);
     if(blockPart){req.resume();return;}
     const chunks=[];for await(const data of req)chunks.push(data);
-    const received=Buffer.concat(chunks);parts.set(number,{partNumber:number,etag:'"part-'+number+'"',sizeBytes:received.length});
+    const received=Buffer.concat(chunks);
+    if(lostPartNotCommitted&&number===1){lostPartNotCommitted=false;req.socket.destroy();return;}
+    parts.set(number,{partNumber:number,etag:'"part-'+number+'"',sizeBytes:received.length});
     assert.deepEqual(received,bytes.subarray((number-1)*5*1024*1024,Math.min(bytes.length,number*5*1024*1024)));
     assert.equal(req.headers.authorization,undefined);assert.equal(req.headers.cookie,undefined);
     if(losePart&&number===1){losePart=false;req.socket.destroy();return;}
@@ -69,6 +71,7 @@ async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,comp
   const settled=async()=>{for(let n=0;n<200;n++){const result=await call({action:'status'});if(result.status!=='transferring')return result;await wait(5);}throw Error('transfer did not settle');};
   t.after(async()=>{await manager.close();for(const socket of sockets)socket.destroy();await new Promise(resolve=>server.close(resolve));await rm(root,{recursive:true,force:true});});
   return{root,filePath,bytes,manager,call,settled,scope,binding,send,calls,puts,setCurrent:value=>{current=value;},
+    confirmFirstPart:()=>parts.set(1,{partNumber:1,etag:'\"part-1\"',sizeBytes:5*1024*1024}),
     counts:()=>({completeCalls,abortCalls})};
 }
 
@@ -172,4 +175,23 @@ test('completion recovery refuses missing original receipts or a different compl
     await assert.rejects(f.call({action:'resume',filePath:undefined}),/original_completion_receipts_required/);
     assert.equal(f.counts().completeCalls,1);assert.deepEqual(f.puts,[1,2]);
   }
+});
+
+
+test('an unconfirmed original PUT is not resent while absent from provider parts; a late receipt resumes only the remaining part',async t=>{
+  const f=await fixture(t,{lostPartNotCommitted:true});await f.call();
+  const first=await f.settled();assert.equal(first.status,'paused');assert.equal(first.unconfirmedPart,1);assert.deepEqual(f.puts,[1]);
+  await f.call({action:'resume'});const second=await f.settled();
+  assert.equal(second.status,'paused');assert.match(second.errorCode,/part_effect_unconfirmed_observe_original/);
+  assert.deepEqual(f.puts,[1]);assert.equal(f.counts().completeCalls,0);
+  f.confirmFirstPart();await f.call({action:'resume'});assert.equal((await f.settled()).status,'ready');
+  assert.deepEqual(f.puts,[1,2]);assert.equal(f.counts().completeCalls,1);
+});
+
+test('repeating upload at a completion checkpoint observes it; only explicit resume repairs the original completion',async t=>{
+  const f=await fixture(t,{completionWindow:'uploaded_unverified'});await f.call();await f.settled();
+  const observed=await f.call({action:'upload'});assert.equal(observed.status,'completion_unconfirmed');
+  assert.equal(f.counts().completeCalls,1);assert.deepEqual(f.puts,[1,2]);
+  await f.call({action:'resume',filePath:undefined});assert.equal((await f.call({action:'status'})).status,'ready');
+  assert.equal(f.counts().completeCalls,2);
 });
