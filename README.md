@@ -8,7 +8,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.5 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.6 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -23,6 +23,8 @@ API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置�
 平台目录提供本机上传入口时，0.3.5桥可将用户明确选择的图片、音频、视频或文档流式直传到该上传会话授权的对象存储。桥只读取指定文件，不扫描目录、不把文件字节放进MCP消息，也不改变作品编辑权或制作确认。
 
 文件必须在桥所在机器可读；远程WSL或SSH中的桥不会自动获得桌面路径。返回结果说明实际文件宿主、原上传ID和幂等键。中断后保留同一键查询或显式恢复；取消同一会话，不另建替代上传。上传、内容校验和素材ready分别显示，ready后可在同一Studio项目使用。
+
+0.3.6在校验或衍生处理失败时，查询仍可成功返回，并保留有界的业务错误码；无法确认的原因使用通用错误码，不返回供应商原异常。已终结上传的提示不会建议恢复传输或无限查询。查询、恢复或取消不会重新执行已经完成的上传和衍生任务。
 
 ## 源码、包和宿主范围
 

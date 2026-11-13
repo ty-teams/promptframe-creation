@@ -10,7 +10,7 @@ import {CreationClientError} from '../lib/credentials.mjs';
 
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const envelope=value=>({content:[{type:'text',text:JSON.stringify(value)}]});
-async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,completionWindow,loseRecoveryAck=false,lostPartNotCommitted=false,now=Date.now}={}){
+async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,completionWindow,loseRecoveryAck=false,lostPartNotCommitted=false,now=Date.now,derivationStatus='ready',derivationErrorCode}={}){
   const root=await mkdtemp(path.join(tmpdir(),'creation-upload-')),filePath=path.join(root,'selected.png');
   const bytes=Buffer.alloc(5*1024*1024+113,7);await writeFile(filePath,bytes);
   const parts=new Map(),calls=[],puts=[],sockets=new Set();let session,completeCalls=0,abortCalls=0,injected=false,derivationReady=true,completeKey;
@@ -55,8 +55,9 @@ async function fixture(t,{losePart=false,loseComplete=false,blockPart=false,comp
         if(loseComplete){loseComplete=false;throw Error('Private transport details must not leak');}
         return envelope({success:true,session,jobId:'direct-upload:own-upload'});
       case 'derivation':if(!derivationReady)return envelope({success:false,errorCode:'media_derivation.job_not_found'});
-        return envelope({success:true,status:'ready',uploadId:session.uploadId,assetId:session.assetId,
-        jobId:'direct-upload:own-upload',asset:{privateUrl:address+'?secret=never-persist'}});
+        return envelope({success:true,status:derivationStatus,errorCode:derivationErrorCode,
+        uploadId:session.uploadId,assetId:session.assetId,jobId:'direct-upload:own-upload',
+        message:'Private upstream details must not leak',asset:{privateUrl:address+'?secret=never-persist'}});
       case 'abort':abortCalls++;session={...session,state:'aborted'};return envelope({success:true,session});
       default:throw Error('unexpected action');
     }
@@ -88,6 +89,46 @@ test('multipart streams only the selected file, persists no path/grant, and obse
   assert.equal((await stat(path.join(folder,entries.find(x=>x.endsWith('.json'))))).mode&0o077,0);
   assert.ok(f.calls.every(call=>!JSON.stringify(call).includes(f.filePath)));
   await assert.rejects(f.call({action:'status'},{...f.scope,account:'other-account'}),/original_upload_not_found/);
+});
+
+test('failed media processing preserves its safe cause and query success without offering or replaying transfer actions',async t=>{
+  const f=await fixture(t,{derivationStatus:'failed',derivationErrorCode:'asset_retention.reservation_missing'});
+  await f.call();const failed=await f.settled();
+  assert.equal(failed.success,true);assert.equal(failed.status,'derivation_failed');
+  assert.equal(failed.errorCode,'asset_retention.reservation_missing');
+  assert.equal(failed.result.success,true);assert.equal(failed.result.status,'failed');
+  assert.equal(failed.result.errorCode,failed.errorCode);
+  assert.match(failed.next,/no remaining transfer action/i);
+  assert.doesNotMatch(failed.next,/explicitly resume|resume\/cancel|read status/i);
+  await f.manager.close();
+  const second=createLocalUploadManager({stateRoot:path.join(f.root,'state')});t.after(()=>second.close());
+  const start=f.calls.length;
+  for(const action of ['status','resume','cancel']){
+    const observed=await second.call({input:{projectId:'own-project',sessionId:'own-work',action,idempotencyKey:'own-stable-key'},
+      scope:f.scope,send:f.send,binding:f.binding});
+    assert.equal(observed.errorCode,failed.errorCode);assert.equal(observed.assetId,failed.assetId);
+    assert.equal(observed.uploadId,failed.uploadId);assert.equal(observed.success,true);
+  }
+  assert.ok(f.calls.slice(start).every(call=>['inspect','derivation'].includes(call.action)));
+  assert.deepEqual(f.puts,[1,2]);assert.deepEqual(f.counts(),{completeCalls:1,abortCalls:0});
+});
+
+test('terminal projection drops unsafe causes and unrelated details while keeping ready results clean',async t=>{
+  for(const errorCode of [undefined,42,'Error: secret upstream details','https://private.invalid/token','media_derivation.'+'a'.repeat(180)]){
+    const f=await fixture(t,{derivationStatus:'failed',derivationErrorCode:errorCode});
+    await f.call();const failed=await f.settled();
+    assert.equal(failed.status,'derivation_failed');assert.equal(failed.success,true);
+    assert.equal(failed.errorCode,'creation.local_upload.derivation_failed');
+    const saved=await Promise.all((await readdir(path.join(f.root,'state'))).filter(name=>name.endsWith('.json'))
+      .map(name=>readFile(path.join(f.root,'state',name),'utf8')));
+    for(const forbidden of ['secret upstream','private.invalid','Private upstream','never-persist']){
+      assert.ok(!JSON.stringify(failed).includes(forbidden));assert.ok(saved.every(body=>!body.includes(forbidden)));
+    }
+  }
+  const f=await fixture(t,{derivationErrorCode:'asset_retention.reservation_missing'});
+  await f.call();const ready=await f.settled();
+  assert.equal(ready.status,'ready');assert.equal(ready.errorCode,undefined);assert.equal(ready.result.errorCode,undefined);
+  assert.match(ready.next,/Use this asset/);assert.deepEqual(f.puts,[1,2]);
 });
 
 test('a lost part ACK pauses once; explicit new-bridge resume observes remote parts and sends only missing bytes',async t=>{
