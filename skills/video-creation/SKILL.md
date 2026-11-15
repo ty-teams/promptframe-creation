@@ -33,4 +33,4 @@ description: 在 PromptFrame 中规划、制作和接续视频，复用平台作
 
 ## 需要自定义组件时
 
-先在平台目录检索现成组件并读取 schema，使用受管 `componentRef`。确需新组件时，按[组件创作 Skill](https://github.com/ty-teams/promptframe-component-authoring/blob/main/skills/component-authoring/SKILL.md)、[工具链 README](https://github.com/ty-teams/promptframe-component-authoring#readme)与[Authoring Guide](https://github.com/ty-teams/promptframe-component-authoring/blob/main/AUTHORING.md)在独立作者项目开发。平台构建与授权就绪后再接回作品；本地文件、npm 包名和上传受理不是可用组件身份。组件上传凭据与创作 Token 用途不同。
+先在平台目录检索现成组件并读取 schema，使用受管 `componentRef`。确需新组件时，使用项目入门返回的 `navigation.componentAuthoring`，按该平台已采用发行的组件 Skill、工具链 README、Authoring Guide 与 CLI 说明在独立作者项目开发。已安装 CLI 使用自己的随包文档及发行链接；选项与支持状态仍核当前平台 schema。导航元数据暂缺时可继续读取公开基线，使用已有 CLI 的文档。平台构建与授权就绪后再接回作品；本地文件、npm 包名和上传受理不是可用组件身份。组件上传凭据与创作 Token 用途不同。

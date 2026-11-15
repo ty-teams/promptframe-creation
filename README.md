@@ -55,11 +55,11 @@ npm test
 
 外部创作 Agent 可以复用平台中的组件，也可以按需开发新组件，例如机制动态图解、对比视图和可参数化图表。先从 MCP 当前工具目录发现组件检索与 schema 读取能力，选择已可用的组件并按 schema 填充 props，使用平台返回的 `componentRef`。CLI 的 `discovery` 用于查看端点能力，`component list` 用于查看项目声明；它们不等于组件市场搜索。
 
-需要新组件时，按需阅读独立的 [组件作者仓库与入门说明](https://github.com/ty-teams/promptframe-component-authoring#readme)、[组件创作 Skill](https://github.com/ty-teams/promptframe-component-authoring/blob/main/skills/component-authoring/SKILL.md) 和 [Authoring Guide](https://github.com/ty-teams/promptframe-component-authoring/blob/main/AUTHORING.md)。公开工具包为：
+需要新组件时，从当前项目入门的 `navigation.componentAuthoring` 取得组件创作 Skill、工具链 README、Authoring Guide 和 CLI 说明。四项链接绑定该平台实际采用的公开发行源码，随平台正常采用或回滚一起变化。已安装 CLI 使用自己的随包文档及发行链接；平台支持状态继续以实时目录和 schema 为准。导航元数据暂缺不影响公开基线读取，可使用已有 CLI 的文档。公开工具包为：
 
 | 工具包 | 用途 |
 | --- | --- |
-| [`@promptframe/cli`](https://www.npmjs.com/package/@promptframe/cli) | `promptframe` 命令：检查、预览、打包、上传和查询平台构建状态；[CLI 使用说明](https://github.com/ty-teams/promptframe-component-authoring/blob/main/packages/cli/README.md) |
+| [`@promptframe/cli`](https://www.npmjs.com/package/@promptframe/cli) | `promptframe` 命令：检查、预览、打包、上传和查询平台构建状态；使用已安装发行的随包说明或项目入门给出的版本导航 |
 | [`create-promptframe-component`](https://www.npmjs.com/package/create-promptframe-component) | 创建组件项目与本地预览入口 |
 | [`@promptframe/component-kit`](https://www.npmjs.com/package/@promptframe/component-kit) | 组件布局、时序和预览等开发辅助能力 |
 | [`@promptframe/contracts`](https://www.npmjs.com/package/@promptframe/contracts) | 平台公开组件合同与标准 |
