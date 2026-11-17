@@ -53,6 +53,10 @@ npm test
 
 开发构建显式产生自包含运行文件。`npm pack --ignore-scripts` 的发行准备由[发布脚本](docs/releasing.md)显式执行构建，不依赖宿主执行安装脚本。不要把源码仓或其node_modules复制给最终用户。
 
+## 检查作品画面与播放
+
+服务端可检查保存版本的代表帧，Studio 可检查作者当前页面的本地或混合组件。选择来源、检查切点、处理标签页共享与取回结果，见[多帧采样操作手册](docs/preview-frames.md)。
+
 ## 用组件丰富视频内容
 
 外部创作 Agent 可以复用平台中的组件，也可以按需开发新组件，例如机制动态图解、对比视图和可参数化图表。先从 MCP 当前工具目录发现组件检索与 schema 读取能力，选择已可用的组件并按 schema 填充 props，使用平台返回的 `componentRef`。CLI 的 `discovery` 用于查看端点能力，`component list` 用于查看项目声明；它们不等于组件市场搜索。
