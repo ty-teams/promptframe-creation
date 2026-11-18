@@ -5,8 +5,9 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
 import {once} from 'node:events';
+import {Readable} from 'node:stream';
 import {openLocalUploadFile,LOCAL_UPLOAD_READ_BYTES} from '../lib/local-upload-file.mjs';
-import {uploadGrantedPart,readPartTransferEffect} from '../lib/local-upload-transfer.mjs';
+import {uploadGrantedPart,readPartTransferEffect,readPartTransferDiagnostic,safePartTransferDiagnostic} from '../lib/local-upload-transfer.mjs';
 
 async function fixture(t){
   const root=await mkdtemp(path.join(tmpdir(),'creation-part-upload-'));
@@ -83,4 +84,52 @@ test('only a transport-owned pre-dispatch fact permits retry; arbitrary error te
   }});}catch(error){uncertain=error;}
   assert.equal(readPartTransferEffect(uncertain),'unknown');assert.equal(calls,1);
   assert.equal(readPartTransferEffect(Object.assign(Error('not_dispatched'),{effect:'not_dispatched'})),undefined);
+});
+
+test('finite part diagnostics distinguish measured local reads, transport, HTTP and receipts without inventing remote byte acceptance',async t=>{
+  const f=await fixture(t),secret='https://objects.invalid/?signature=DO_NOT_COPY';
+  for(const scenario of ['local-read','dns','partial-reset','http','short-read','etag'])await t.test(scenario,async()=>{
+    let calls=0,ticks=100,error;
+    const file={...f.file,...(scenario==='local-read'?{streamPart:()=>Readable.from((async function*(){yield Buffer.alloc(16);throw Object.assign(Error(secret),{code:'EIO'});})())}:{}),
+      ...(scenario==='short-read'?{streamPart:()=>Readable.from([Buffer.alloc(22)])}:{})};
+    try{await uploadGrantedPart(file,f.authorization,f.grants[0],{...f.options,requestId:'create-original-key',monotonicNow:()=>{const n=ticks;ticks+=107.5;return n;},
+      fetch:async(_url,{body})=>{
+        calls++;if(scenario==='dns')throw new TypeError(secret,{cause:Object.assign(Error(secret),{code:'ENOTFOUND'})});
+        if(scenario==='http')return new Response(null,{status:403});
+        if(scenario==='partial-reset'){await body[Symbol.asyncIterator]().next();throw Object.assign(Error(secret),{code:'ECONNRESET'});}
+        for await(const _chunk of body){}return new Response(null,{status:200,...(scenario==='etag'?{}:{headers:{etag:'"same-part"'}})});
+      }});}catch(e){error=e;}
+    assert(error,scenario);assert.equal(calls,1);assert.equal(readPartTransferEffect(error),'unknown');
+    const d=readPartTransferDiagnostic(error);assert(d);assert.equal(d.requestId,'create-original-key');assert.equal(d.uploadId,'upload-own');
+    assert.equal(d.assetId,'asset-own');assert.equal(d.partNumber,1);assert.equal(d.expectedBytes,1024*1024);assert.equal(d.elapsedMs,107);
+    assert.equal(d.causeCode,{'local-read':'local_read_failed',dns:'dns_failure','partial-reset':'connection_interrupted',http:'http_rejected','short-read':'byte_count_mismatch',etag:'etag_missing'}[scenario]);
+    if(['http','short-read','etag'].includes(scenario))assert.equal(d.httpStatus,scenario==='http'?403:200);else assert.equal(d.httpStatus,undefined);
+    if(scenario==='local-read')assert.equal(d.bytesRead,16);
+    if(scenario==='partial-reset')assert(d.bytesRead>0&&d.bytesRead<d.expectedBytes);
+    if(scenario==='short-read')assert.equal(d.bytesRead,22);
+    if(scenario==='etag')assert.equal(d.bytesRead,d.expectedBytes,'local complete read is measured, remote acceptance remains unconfirmed');
+    for(const privateValue of ['DO_NOT_COPY','objects.invalid','signature','stack'])assert(!JSON.stringify(d).includes(privateValue));
+  });
+  assert.equal(readPartTransferDiagnostic(Object.assign(Error(secret),{diagnostic:{causeCode:'dns_failure'}})),undefined);
+  assert.deepEqual(safePartTransferDiagnostic({stage:'streaming',causeCode:'connection_interrupted',bytesRead:2,
+    requestId:secret,httpStatus:999,elapsedMs:Infinity,stack:secret,url:secret}),{stage:'streaming',causeCode:'connection_interrupted',bytesRead:2});
+});
+
+test('cancel and bounded progress/deadline timers retain unknown transport with distinct safe causes',async t=>{
+  const f=await fixture(t);
+  for(const scenario of ['cancel','first','idle','total'])await t.test(scenario,async()=>{
+    const auth=structuredClone(f.authorization);auth.transferBudget={part:{totalMs:scenario==='total'?10:200,
+      firstProgressMs:scenario==='first'?8:100,idleMs:8}};
+    const controller=new AbortController();let calls=0,error;
+    const cancel=scenario==='cancel'?setTimeout(()=>controller.abort(),8):undefined;
+    try{await uploadGrantedPart(f.file,auth,auth.grants[0],{...f.options,signal:controller.signal,fetch:async(_url,{body,signal})=>{
+      calls++;if(scenario==='idle')await body[Symbol.asyncIterator]().next();
+      return new Promise((_resolve,reject)=>{const held=setTimeout(()=>reject(Error('owned test exceeded')),1000);
+        const end=()=>{clearTimeout(held);reject(new DOMException('private discarded cause','AbortError'));};
+        if(signal.aborted)end();else signal.addEventListener('abort',end,{once:true});});
+    }});}catch(e){error=e;}finally{clearTimeout(cancel);}
+    assert.equal(calls,1);assert.equal(readPartTransferEffect(error),'unknown');
+    const d=readPartTransferDiagnostic(error);assert.equal(d.causeCode,{cancel:'cancelled',first:'first_progress_timeout',idle:'idle_timeout',total:'deadline_elapsed'}[scenario]);
+    assert(Number.isSafeInteger(d.elapsedMs));assert.equal(d.httpStatus,undefined);
+  });
 });

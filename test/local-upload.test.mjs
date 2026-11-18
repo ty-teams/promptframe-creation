@@ -133,7 +133,11 @@ test('terminal projection drops unsafe causes and unrelated details while keepin
 
 test('a lost part ACK pauses once; explicit new-bridge resume observes remote parts and sends only missing bytes',async t=>{
   const f=await fixture(t,{losePart:true});await f.call();
-  assert.equal((await f.settled()).status,'paused');assert.deepEqual(f.puts,[1]);
+  const paused=await f.settled();assert.equal(paused.status,'paused');assert.deepEqual(f.puts,[1]);
+  assert.equal(paused.lastTransferDiagnostic.uploadId,'own-upload');assert.equal(paused.lastTransferDiagnostic.partNumber,1);
+  assert.equal(paused.lastTransferDiagnostic.bytesRead,5*1024*1024);
+  assert.equal(paused.lastTransferDiagnostic.causeCode,'connection_interrupted');
+  assert.equal(paused.automaticReplayAllowed,false);assert(!JSON.stringify(paused.lastTransferDiagnostic).includes('signature'));
   const calls=f.calls.length;await f.call({action:'status'});assert.deepEqual(f.puts,[1]);
   assert.ok(f.calls.slice(calls).every(call=>call.action==='inspect'));
   await f.manager.close();
