@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, chmod, symlink, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { localAccountsRoot, localAccountKey, localReferenceId, localCredentialDigest,
   recordLocalAuthorization, readLocalAuthorization, listLocalAccounts,
   selectLocalAccount, readSelectedLocalAccount, localAgentDigest } from '../lib/local-accounts.mjs';
@@ -117,3 +118,26 @@ test('only authenticated initialize metadata can identify a connection; missing 
   const malformed = { getServerCapabilities: () => ({ experimental: { 'promptframe.accountIdentity': { ...A, token: 'not-identity' } } }) };
   assert.throws(() => connectionAccountIdentity(malformed), /accounts.identity_invalid/);
 });
+
+test('a FIFO in place of a private account selection is rejected without waiting for a writer',
+  {skip:process.platform==='win32'},()=>owned(async root=>{
+    await selectLocalAccount({root,agent:agentA,identity:A});
+    const file=path.join(root,'selections',agentA.kind+'-'+localAgentDigest(agentA).slice(7)+'.json');
+    await rm(file);
+    const fifo=spawnSync('mkfifo',['-m','600',file]);assert.equal(fifo.status,0);
+    const module=new URL('../lib/local-accounts.mjs',import.meta.url).href;
+    const script=`import {readSelectedLocalAccount} from ${JSON.stringify(module)};
+      try {await readSelectedLocalAccount(${JSON.stringify({root,agent:agentA})});process.exitCode=1;}
+      catch(error) {if(error.message!=='accounts.private_storage_required')throw error;}`;
+    const result=spawnSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8',timeout:1500});
+    assert.equal(result.error,undefined,'owned fixture reader must not block opening a special file');
+    assert.equal(result.status,0,result.stderr);
+    const ref=await recordLocalAuthorization(reference(root));
+    const catalog=path.join(root,'identities',A.platformDigest.slice(7),A.accountDigest.slice(7),'creation',ref.referenceId.slice(7)+'.json');
+    await rm(catalog);assert.equal(spawnSync('mkfifo',['-m','600',catalog]).status,0);
+    const cli=spawnSync(process.execPath,[new URL('../bin/promptframe-creation.mjs',import.meta.url).pathname,'accounts','list'],{
+      encoding:'utf8',timeout:1500,env:{...process.env,PROMPTFRAME_ACCOUNT_DIRECTORY:root,PROMPTFRAME_CREATION_CONFIG:path.join(root,'own-config.json')},
+    });
+    assert.equal(cli.error,undefined,'the actual built CLI must reject a special metadata file');
+    assert.equal(cli.status,1);assert.match(cli.stderr,/accounts.private_storage_required/);
+  }));
