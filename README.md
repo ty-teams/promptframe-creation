@@ -8,7 +8,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.11 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.12 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -87,3 +87,7 @@ Token是独立创作授权，不是codex mcp login。已有有效文件会复用
 GitHub Actions沿独立版本和既有OIDC流程发行；普通main只跑CI。包/lock/plugin版本一致，正式新版本用新的creation-v标签，已发布的版本和标签保持不变。详见[发布手册](docs/releasing.md)。
 
 开发连接可通过平台的 `studio_preview` 操作配置。将运行中的本机组件开发命令输出保存在本人可读写的私有 JSON 文件中，向工具提供明确的 `connectionFile` 路径、目标页面及版本；桥在核对当前编辑方后读取该文件，不把内容写进聊天或作品。已有工程按 `connectionId` 重新校验，实际连接和组件 loaded 分别查询。配对文件只在运行开发服务的电脑读取；刷新接回工程与浏览器屏幕共享授权分别处理。
+
+### 授权与客户端活动
+
+兼容的平台可在「授权与设备」显示客户端自报的系统族、应用及版本。桥在认证确认账号后使用按账号和本机配置隔离的随机实例标识；它不是设备指纹，不参与权限判断。删除配置目录下的客户端观察记录会重建此标识，不会换发创作授权。旧平台或无法安全保存观察记录时仍使用原授权，显示信息可能未记录。

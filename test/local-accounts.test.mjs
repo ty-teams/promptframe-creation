@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { localAccountsRoot, localAccountKey, localReferenceId, localCredentialDigest,
   recordLocalAuthorization, readLocalAuthorization, listLocalAccounts,
-  selectLocalAccount, readSelectedLocalAccount, localAgentDigest } from '../lib/local-accounts.mjs';
+  selectLocalAccount, readSelectedLocalAccount, localAgentDigest,localClientObservationInstance } from '../lib/local-accounts.mjs';
 import { connectionAccountIdentity } from '../lib/connection.mjs';
 
 const sha = value => 'sha256:' + createHash('sha256').update(value).digest('hex');
@@ -24,6 +24,18 @@ const reference = (root, client = 'creation', account = A) => ({ root, client, i
   configFile: path.join(root, client + '-own-config.json'), endpoint: 'https://fixture.invalid/api/mcp',
   token: 'owned-private-token-for-control-only', profile: 'own-profile',
   expiresAt: '2030-01-01T00:00:00.000Z', observedAt: '2026-11-21T00:00:00.000Z' });
+
+test('display instance is stable within one config/account, independently scoped and resettable without a grant',()=>owned(async root=>{
+ const input={root,identity:A,configFile:path.join(root,'own-A.json')};
+ const values=await Promise.all(Array.from({length:10},()=>localClientObservationInstance(input)));
+ assert(values.every(value=>value===values[0]));
+ assert.notEqual(await localClientObservationInstance({...input,identity:B}),values[0]);
+ assert.notEqual(await localClientObservationInstance({...input,configFile:path.join(root,'own-other.json')}),values[0]);
+ const file=path.join(root,'client-observations','v1',A.platformDigest.slice(7),A.accountDigest.slice(7),localReferenceId('creation',input.configFile).slice(7)+'.json');
+ assert.deepEqual(Object.keys(JSON.parse(await readFile(file,'utf8'))).sort(),['contractVersion','instanceId']);
+ await rm(file);assert.notEqual(await localClientObservationInstance(input),values[0]);
+ await chmod(file,0o644);await assert.rejects(localClientObservationInstance(input),/private_storage_required/);
+}));
 
 test('one immutable account groups repeated Creation and CLI registration without copying credentials into safe views', () => owned(async root => {
   const creation = reference(root), cli = reference(root, 'component-cli');
