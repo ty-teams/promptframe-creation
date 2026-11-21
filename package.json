@@ -32,7 +32,7 @@
     "promptframe-creation": "bin/promptframe-creation.mjs"
   },
   "scripts": {
-    "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs",
+    "test": "npm run build && node scripts/test-runtime.mjs",
     "build": "node scripts/build-runtime.mjs"
   },
   "devDependencies": {

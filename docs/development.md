@@ -13,6 +13,7 @@
 | 依赖闭包/许可证 | `scripts/build-runtime.mjs` |
 | 环境地址与安全凭据 | `lib/credentials.mjs` |
 | 平台 MCP HTTP 连接 | `lib/connection.mjs` |
+| 共享本机账号目录与当前宿主会话的连接选择 | `lib/local-accounts.mjs`、`lib/account-bridge.mjs`，格式见[本机账号目录](local-account-directory.md) |
 | 当前源码的宿主 thread 与控制版本接线 | `lib/host-context.mjs` |
 | 新会话固定版本选择、完整性缓存与 stdio 接续 | `lib/runtime-bootstrap.mjs`、`lib/runtime-package.mjs`、`lib/runtime-launch.mjs` |
 | 插件加载与启动 | `.codex-plugin/plugin.json`、`.mcp.json` |
