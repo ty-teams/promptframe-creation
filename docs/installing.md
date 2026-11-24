@@ -6,7 +6,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.13 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.14 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -26,7 +26,7 @@ npx --yes @promptframe/creation@0.3.13 connect --endpoint <Studio提供的API地
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.13 connect --host claude-code --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.14 connect --host claude-code --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -44,11 +44,13 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.13 connect --host antigravity --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.14 connect --host antigravity --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
 安装后检查 Antigravity 的 Customizations 中是否启用 PromptFrame Creation，再打开新对话。插件通过 `PreToolUse` 将调用绑定到实际对话，两个 Skill 和 MCP 工具由宿主加载。首次授权在终端隐藏输入，已有有效授权可复用。
+
+0.3.14 支持 Antigravity 默认的懒加载 MCP 调用。已有插件需重跑本段命令以更新注册的 hook，再开独立对话。如果安装报告 `installation.legacy_mcp_entry_requires_review`，在 Antigravity 的 MCP 设置核对清单所列的旧手工 PromptFrame 条目，移除冲突条目后重试。安装器保留全局文件和其他 MCP 配置。
 
 ## 环境与账号
 
@@ -58,7 +60,7 @@ npx --yes @promptframe/creation@0.3.13 connect --host antigravity --endpoint <St
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.13 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.3.14 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 

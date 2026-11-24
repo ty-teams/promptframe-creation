@@ -12,6 +12,8 @@ import {resolveHostIdentity,hostParameters} from '../lib/host-identity.mjs';
 const repoRoot=fileURLToPath(new URL('..',import.meta.url));
 const convA='11111111-1111-4111-8111-111111111111';
 const convB='22222222-2222-4222-8222-222222222222';
+const defaultServer='promptframe-creation_promptframe-creation';
+const lazyCall=(ServerName,ToolName,Arguments)=>({name:'call_mcp_tool',args:{ServerName,ToolName,Arguments}});
 
 test('antigravity host identity resolves explicitly without hijacking default codex',()=>{
   assert.deepEqual(resolveHostIdentity({host:'antigravity',env:{}}),{kind:'antigravity'});
@@ -91,7 +93,10 @@ test('installForAntigravityUser writes native plugin bundle and is idempotent',a
     assert.ok(mcpJson.mcpServers['promptframe-creation'].args.includes('--host'));
     assert.ok(mcpJson.mcpServers['promptframe-creation'].args.includes('antigravity'));
     const hooksJson=JSON.parse(await readFile(path.join(first.pluginDir,'hooks.json'),'utf8'));
-    assert.ok(hooksJson['promptframe-host-identity'].PreToolUse[0].hooks[0].command.includes('antigravity-host-hook'));
+    const lifecycle=hooksJson['promptframe-host-identity'];
+    assert.match(lifecycle.SessionStart[0].command,/antigravity-host-hook.*--hook-event SessionStart$/);
+    assert.match(lifecycle.PreToolUse[0].hooks[0].command,/--mcp-server "promptframe-creation_promptframe-creation" --hook-event PreToolUse$/);
+    assert.match('call_mcp_tool',new RegExp(lifecycle.PreToolUse[0].matcher));
     const skill=await readFile(path.join(first.pluginDir,'skills/video-creation/SKILL.md'),'utf8');
     assert.ok(skill.length>50);
 
@@ -100,6 +105,48 @@ test('installForAntigravityUser writes native plugin bundle and is idempotent',a
     assert.equal(second.reused,true);
     assert.equal(second.versionStatus,'already_current');
   }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('Antigravity lazy calls overwrite inner Arguments and bind each conversation to the exact tool',async t=>{
+  const root=await mkdtemp(path.join(tmpdir(),'pf-agy-lazy-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const store=await createAntigravityHostSession({configFile:path.join(root,'credentials.json'),root:path.join(root,'sessions')});
+  const args={projectId:'default-project',title:'Test blank work'};
+  const tool='platform_create_session';
+  const out=await store.hook({conversationId:convA,toolCall:lazyCall(defaultServer,tool,args)},'PreToolUse');
+  assert.equal(out.decision,'allow');
+  const forwarded=out.overwrite.Arguments;
+  assert.match(forwarded[CLAUDE_HOST_PROOF],/^[a-f0-9]{64}$/);
+  assert.equal(out.overwrite[CLAUDE_HOST_PROOF],undefined);
+  assert.deepEqual({...forwarded,[CLAUDE_HOST_PROOF]:undefined},{...args,[CLAUDE_HOST_PROOF]:undefined});
+  await assert.rejects(()=>store.begin({name:'platform_read_onboarding',arguments:forwarded}),/host_identity_invalid/);
+  await assert.rejects(()=>store.begin({name:tool,arguments:{...forwarded,title:'changed'}}),/host_identity_invalid/);
+  assert.deepEqual((await store.begin({name:tool,arguments:forwarded})).host,{kind:'antigravity',threadId:convA});
+  await assert.rejects(()=>store.begin({name:tool,arguments:forwarded}),/host_identity_invalid/);
+
+  const future='future.dynamic-tool';
+  const noArgs=await store.hook({conversationId:convB,toolCall:lazyCall(defaultServer,future)},'PreToolUse');
+  const second=await store.begin({name:future,arguments:noArgs.overwrite.Arguments});
+  assert.deepEqual(second.arguments,{});
+  assert.deepEqual(second.host,{kind:'antigravity',threadId:convB});
+  for(const bad of [lazyCall('unrelated',tool,args),lazyCall('promptframe-creation',tool,args),lazyCall(defaultServer,tool,[])])
+    assert.deepEqual(await store.hook({conversationId:convA,toolCall:bad},'PreToolUse'),{decision:'allow'});
+});
+
+test('Antigravity SessionStart recovers only a unique matching transcript',async t=>{
+  const root=await mkdtemp(path.join(tmpdir(),'pf-agy-bound-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const store=await createAntigravityHostSession({configFile:path.join(root,'credentials.json'),root:path.join(root,'sessions')});
+  const transcriptA=path.join(root,'a.jsonl'),transcriptB=path.join(root,'b.jsonl');
+  const name='platform_create_session',toolCall=lazyCall(defaultServer,name,{projectId:'p'});
+  assert.deepEqual(await store.hook({conversationId:convA,transcriptPath:transcriptA},'SessionStart'),{});
+  await store.hook({conversationId:convB,transcriptPath:transcriptB},'SessionStart');
+  for(const input of [{toolCall},{toolCall,transcriptPath:path.join(root,'missing.jsonl')},{toolCall,transcriptPath:transcriptA,conversationId:'invalid'}])
+    assert.deepEqual(await store.hook(input,'PreToolUse'),{decision:'allow'});
+  const out=await store.hook({toolCall,transcriptPath:transcriptA},'PreToolUse');
+  assert.equal((await store.begin({name,arguments:out.overwrite.Arguments})).host.threadId,convA);
+  await store.hook({conversationId:convB,transcriptPath:transcriptA},'SessionStart');
+  assert.deepEqual(await store.hook({toolCall,transcriptPath:transcriptA},'PreToolUse'),{decision:'allow'});
 });
 
 test('installForAntigravityUser leaves an unowned plugin directory intact',async()=>{
