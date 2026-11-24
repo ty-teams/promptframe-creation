@@ -11,6 +11,8 @@ export function installGuidanceManifest(version){
     commandArgs:['connect','--endpoint','{{endpoint}}'],nextSession:'在同一主机打开 Local 新聊天；CLI 使用新 session。'},
    {kind:'claude-code',name:'Claude Code',minimumBridge:'0.3.1',requirements:'Node.js 20+ 与 Claude Code 2.1.295+；受控会话身份使用 Linux/WSL 原生 CLI 或桌面版的同机远程入口',
     commandArgs:['connect','--host','claude-code','--endpoint','{{endpoint}}'],nextSession:'在同一主机开始新的 Claude Code session；桌面版远程连接 WSL 时在该 WSL 安装。'},
+   {kind:'antigravity',name:'Antigravity',minimumBridge:'0.3.12',requirements:'Node.js 20+ 与 Google Antigravity；插件安装到 ~/.gemini/config/plugins 后新会话自动按平台声明无感升级运行桥',
+    commandArgs:['connect','--host','antigravity','--endpoint','{{endpoint}}'],nextSession:'在同一主机打开新的 Antigravity 对话（或在 Customizations 确认 promptframe-creation 插件已启用）。'},
   ],
   versionInstructions:'比较已安装版本：同版本复用，更新版本不降级；待升级或 Node 不可用时按明确指引处理，不把旧版复用当作升级成功。',
   credentialInstructions:'复用已有有效授权，不轮换 Token。首次 Token 仅在本机终端隐藏输入，不放进聊天。',

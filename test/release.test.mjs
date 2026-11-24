@@ -107,7 +107,7 @@ test('marked current instructions follow package version while historical exampl
  assert.throws(()=>renderInstallGuidance('<!-- creation-install-command -->bad<!-- /creation-install-command -->',pkg.version),/guidance_command_invalid/);
  const manifest=JSON.parse(await readFile(path.join(root,'docs/install-guidance.json'),'utf8'));
  assert.deepEqual(manifest,installGuidanceManifest(pkg.version));
- assert.deepEqual(manifest.hosts.map(h=>h.kind),['codex','claude-code']);
+ assert.deepEqual(manifest.hosts.map(h=>h.kind),['codex','claude-code','antigravity']);
  assert.equal(manifest.hosts[1].minimumBridge,'0.3.1','current controlled Claude identity requires the corrected bridge; old releases remain unchanged');
  assert.deepEqual(manifest.hosts[1].commandArgs,['connect','--host','claude-code','--endpoint','{{endpoint}}']);
 });
