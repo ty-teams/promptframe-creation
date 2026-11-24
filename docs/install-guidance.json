@@ -1,7 +1,7 @@
 {
   "schemaVersion": "creation-install-guidance/v1",
   "package": "@promptframe/creation",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "hosts": [
     {
       "kind": "codex",
@@ -32,8 +32,8 @@
     {
       "kind": "antigravity",
       "name": "Antigravity",
-      "minimumBridge": "0.3.12",
-      "requirements": "Node.js 20+ 与 Google Antigravity；插件安装到 ~/.gemini/config/plugins 后新会话自动按平台声明无感升级运行桥",
+      "minimumBridge": "0.3.13",
+      "requirements": "Node.js 20+ 与支持本地插件及 PreToolUse 的 Google Antigravity；在支持 POSIX 文件权限的宿主安装",
       "commandArgs": [
         "connect",
         "--host",

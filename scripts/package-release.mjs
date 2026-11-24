@@ -39,7 +39,8 @@ export function validateFiles(files) {
     "lib/credentials.mjs", "lib/connection.mjs", "skills/video-creation/SKILL.md",
     ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json", ".mcp.json",
     ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".claude-mcp.json",
-    "dist/cli.mjs","dist/THIRD_PARTY_NOTICES.txt","skills/creation-setup/SKILL.md"];
+    "dist/cli.mjs", "dist/THIRD_PARTY_NOTICES.txt", "skills/creation-setup/SKILL.md",
+    "docs/install-guidance.json", "lib/antigravity-host-session.mjs", "lib/antigravity-installation.mjs"];
   if (required.some((name) => !files.includes(name))) fail("package_file_missing");
   if (files.some((name) => !/^(?:package\.json|README\.md|LICENSE|\.mcp\.json|\.claude-mcp\.json|(?:bin|dist|lib|skills|docs|\.codex-plugin|\.claude-plugin|\.agents\/plugins)\/[^\r\n]+)$/.test(name)
     || name.split("/").some((part) => part === "..")
@@ -106,6 +107,10 @@ export async function verify(directory) {
   if (packed.name !== pkg.name || packed.version !== pkg.version || packed.private !== pkg.private
     || packed.repository?.url !== pkg.repository.url || plugin.version !== pkg.version || claude.version !== pkg.version)
     fail("packed_metadata_mismatch");
+  const { installGuidanceManifest } = await import("./install-guidance.mjs");
+  const guidance = run("tar", ["-xOzf", artifact, "package/docs/install-guidance.json"]);
+  if (guidance !== JSON.stringify(installGuidanceManifest(packed.version), null, 2) + "\n")
+    fail("packed_install_guidance_mismatch");
   return { pkg, manifest, artifact };
 }
 

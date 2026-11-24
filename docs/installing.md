@@ -6,7 +6,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.12 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.13 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -26,7 +26,7 @@ npx --yes @promptframe/creation@0.3.12 connect --endpoint <Studio提供的API地
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.12 connect --host claude-code --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.13 connect --host claude-code --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -38,6 +38,18 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 启动帮助明确不提供插件命令时，安装器使用官方 user-scope MCP 登记并准备两份用户 Skill。返回 `installationMode: mcp-and-skills`、`pluginInstalled: false` 与实际 Skill 名称；不同 profile 分开命名，原凭据保持。MCP 写后从本地配置核回，不通过 `mcp list/get` 启动健康检查。已有陌生 MCP/Skill 或未确认的插件安装不会转到备用路径；备用 MCP 的回程未知也只核原身份，不重复 add。以后宿主增加插件命令时保留现有备用登记，避免同一 profile 两份连接。
 
+## Antigravity 接入
+
+在支持 POSIX 文件权限并运行 Google Antigravity 的主机上打开终端，使用 Studio 提供的 API 地址。
+
+<!-- creation-install-command -->
+```bash
+npx --yes @promptframe/creation@0.3.13 connect --host antigravity --endpoint <Studio提供的API地址>
+```
+<!-- /creation-install-command -->
+
+安装后检查 Antigravity 的 Customizations 中是否启用 PromptFrame Creation，再打开新对话。插件通过 `PreToolUse` 将调用绑定到实际对话，两个 Skill 和 MCP 工具由宿主加载。首次授权在终端隐藏输入，已有有效授权可复用。
+
 ## 环境与账号
 
 默认凭据沿用 `$XDG_CONFIG_HOME/promptframe-creation/credentials.json`（未配置 XDG 时位于用户 `.config`）。旧的 `PROMPTFRAME_CREATION_CONFIG` 仍可显式引用安全文件。
@@ -46,7 +58,7 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.12 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.3.13 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 

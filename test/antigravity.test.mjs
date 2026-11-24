@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,rm} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -26,9 +26,9 @@ test('antigravity host session supports concurrent conversations with one-use pr
     const configFile=path.join(dir,'credentials.json');
     const session=await createAntigravityHostSession({configFile,root:path.join(dir,'sessions')});
     const outA=await session.hook({
-      hookEventName:'PreToolUse',
       conversationId:convA,
-      toolCall:{id:'call-a',name:'mcp_promptframe-creation_platform_read_session',args:{projectId:'p1',sessionId:'s1'}},
+      stepIdx:19,
+      toolCall:{name:'mcp_promptframe-creation_platform_read_session',args:{projectId:'p1',sessionId:'s1'}},
     });
     const outB=await session.hook({
       hookEventName:'PreToolUse',
@@ -39,6 +39,12 @@ test('antigravity host session supports concurrent conversations with one-use pr
     assert.match(outA.overwrite[CLAUDE_HOST_PROOF],/^[a-f0-9]{64}$/);
     assert.equal(outB.decision,'allow');
     assert.match(outB.overwrite[CLAUDE_HOST_PROOF],/^[a-f0-9]{64}$/);
+
+    assert.deepEqual(await session.hook({
+      hookEventName:'PostToolUse',
+      conversationId:convA,
+      toolCall:{name:'platform_call_tool',args:{}},
+    }),{});
 
     // Non-PromptFrame tool passes through untouched
     const other=await session.hook({
@@ -93,5 +99,19 @@ test('installForAntigravityUser writes native plugin bundle and is idempotent',a
     const second=await installForAntigravityUser({sourceRoot:repoRoot,profile:'default',configFile,env,nodeCommand:'/usr/bin/node'});
     assert.equal(second.reused,true);
     assert.equal(second.versionStatus,'already_current');
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('installForAntigravityUser leaves an unowned plugin directory intact',async()=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'pf-agy-unowned-'));
+  try{
+    const configFile=path.join(dir,'config','credentials.json');
+    const env={...process.env,XDG_DATA_HOME:path.join(dir,'data'),ANTIGRAVITY_CONFIG_DIR:path.join(dir,'agy-config')};
+    const pluginDir=path.join(env.ANTIGRAVITY_CONFIG_DIR,'plugins','promptframe-creation');
+    await mkdir(pluginDir,{recursive:true});
+    const manifest=path.join(pluginDir,'plugin.json');
+    await writeFile(manifest,'{"name":"promptframe-creation","version":"0.1.0"}');
+    await assert.rejects(()=>installForAntigravityUser({sourceRoot:repoRoot,configFile,env}),/managed_installation_invalid/);
+    assert.equal(await readFile(manifest,'utf8'),'{"name":"promptframe-creation","version":"0.1.0"}');
   }finally{await rm(dir,{recursive:true,force:true});}
 });

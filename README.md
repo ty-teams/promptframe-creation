@@ -8,7 +8,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.12 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.13 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -19,6 +19,8 @@ Claude Code 使用同一安装入口并加 `--host claude-code`；桌面版远�
 API 使用 Studio 实际可达 origin 和 `/api` 或 `/api/mcp`，没有内置生产/私有地址。远程客户端不要改成自己的 localhost。另一个环境或账号显式使用 `--profile <名称>`；新旧桥各固定凭据路径，不热切环境。有效 Token 不因升级、新作品或接管轮换。详细安装、升级保旧、卸载和排障见[安装说明](docs/installing.md)。Linux、WSL、macOS 使用0700目录/0600凭据；原生Windows ACL尚未验证。
 
 0.3.11 提供[本机账号目录与当前 Agent 选择](docs/local-account-directory.md)：复用各自 profile 的授权，合并显示相同账号，并只切换当前宿主会话。显式选择需要平台在认证初始化时返回可核身份；旧平台的原 profile 保持兼容。发行包与实际宿主加载分别核实，安装版本以平台推荐和公共包为准。
+
+Google Antigravity 支持本地插件及 `PreToolUse` 的版本可以使用 [Antigravity 接入](docs/installing.md#antigravity-接入)。请在运行 Antigravity 的主机上安装，随后打开新对话。
 
 ## 本机素材
 
