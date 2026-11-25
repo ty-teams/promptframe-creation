@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {access,mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,7 +12,7 @@ import {resolveHostIdentity,hostParameters} from '../lib/host-identity.mjs';
 const repoRoot=fileURLToPath(new URL('..',import.meta.url));
 const convA='11111111-1111-4111-8111-111111111111';
 const convB='22222222-2222-4222-8222-222222222222';
-const defaultServer='promptframe-creation_promptframe-creation';
+const defaultServer='promptframe_pf';
 const lazyCall=(ServerName,ToolName,Arguments)=>({name:'call_mcp_tool',args:{ServerName,ToolName,Arguments}});
 
 test('antigravity host identity resolves explicitly without hijacking default codex',()=>{
@@ -30,7 +30,7 @@ test('antigravity host session supports concurrent conversations with one-use pr
     const outA=await session.hook({
       conversationId:convA,
       stepIdx:19,
-      toolCall:{name:'mcp_promptframe-creation_platform_read_session',args:{projectId:'p1',sessionId:'s1'}},
+      toolCall:{name:'mcp_promptframe_pf_platform_read_session',args:{projectId:'p1',sessionId:'s1'}},
     });
     const outB=await session.hook({
       hookEventName:'PreToolUse',
@@ -86,17 +86,20 @@ test('installForAntigravityUser writes native plugin bundle and is idempotent',a
     assert.equal(first.versionStatus,'installed');
 
     const pluginJson=JSON.parse(await readFile(path.join(first.pluginDir,'plugin.json'),'utf8'));
-    assert.equal(pluginJson.name,'promptframe-creation');
+    assert.equal(pluginJson.name,'promptframe');
     assert.equal(pluginJson.version,first.version);
     const mcpJson=JSON.parse(await readFile(path.join(first.pluginDir,'mcp_config.json'),'utf8'));
-    assert.equal(mcpJson.mcpServers['promptframe-creation'].command,'/usr/bin/node');
-    assert.ok(mcpJson.mcpServers['promptframe-creation'].args.includes('--host'));
-    assert.ok(mcpJson.mcpServers['promptframe-creation'].args.includes('antigravity'));
+    assert.equal(mcpJson.mcpServers.pf.command,'/usr/bin/node');
+    assert.ok(mcpJson.mcpServers.pf.args.includes('--host'));
+    assert.ok(mcpJson.mcpServers.pf.args.includes('antigravity'));
     const hooksJson=JSON.parse(await readFile(path.join(first.pluginDir,'hooks.json'),'utf8'));
     const lifecycle=hooksJson['promptframe-host-identity'];
     assert.match(lifecycle.SessionStart[0].command,/antigravity-host-hook.*--hook-event SessionStart$/);
-    assert.match(lifecycle.PreToolUse[0].hooks[0].command,/--mcp-server "promptframe-creation_promptframe-creation" --hook-event PreToolUse$/);
+    assert.match(lifecycle.PreToolUse[0].hooks[0].command,/--mcp-server "promptframe_pf" --hook-event PreToolUse$/);
     assert.match('call_mcp_tool',new RegExp(lifecycle.PreToolUse[0].matcher));
+    for(const tool of ['platform_save_brief','platform_upload_file','platform_read_component_source','promptframe_local_select_account']){
+      assert.match(`mcp_${first.serverName}_${tool}`,/^[a-zA-Z0-9_-]{1,64}$/);
+    }
     const skill=await readFile(path.join(first.pluginDir,'skills/video-creation/SKILL.md'),'utf8');
     assert.ok(skill.length>50);
 
@@ -154,11 +157,39 @@ test('installForAntigravityUser leaves an unowned plugin directory intact',async
   try{
     const configFile=path.join(dir,'config','credentials.json');
     const env={...process.env,XDG_DATA_HOME:path.join(dir,'data'),ANTIGRAVITY_CONFIG_DIR:path.join(dir,'agy-config')};
-    const pluginDir=path.join(env.ANTIGRAVITY_CONFIG_DIR,'plugins','promptframe-creation');
+    const pluginDir=path.join(env.ANTIGRAVITY_CONFIG_DIR,'plugins','promptframe');
     await mkdir(pluginDir,{recursive:true});
     const manifest=path.join(pluginDir,'plugin.json');
-    await writeFile(manifest,'{"name":"promptframe-creation","version":"0.1.0"}');
+    await writeFile(manifest,'{"name":"promptframe","version":"0.1.0"}');
     await assert.rejects(()=>installForAntigravityUser({sourceRoot:repoRoot,configFile,env}),/managed_installation_invalid/);
-    assert.equal(await readFile(manifest,'utf8'),'{"name":"promptframe-creation","version":"0.1.0"}');
+    assert.equal(await readFile(manifest,'utf8'),'{"name":"promptframe","version":"0.1.0"}');
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('installForAntigravityUser removes owned legacy promptframe-creation plugin directory only',async()=>{
+  const dir=await mkdtemp(path.join(tmpdir(),'pf-agy-migrate-'));
+  try{
+    const configFile=path.join(dir,'config','credentials.json');
+    const env={...process.env,XDG_DATA_HOME:path.join(dir,'data'),ANTIGRAVITY_CONFIG_DIR:path.join(dir,'agy-config')};
+    const legacyDir=path.join(env.ANTIGRAVITY_CONFIG_DIR,'plugins','promptframe-creation');
+    await mkdir(legacyDir,{recursive:true});
+    await writeFile(path.join(legacyDir,'promptframe-installation.json'),JSON.stringify({
+      contractVersion:'antigravity-plugin-installation/v1',
+      host:'antigravity',
+      profile:'default',
+      configFile,
+      version:'0.3.14',
+    }));
+
+    const installed=await installForAntigravityUser({sourceRoot:repoRoot,profile:'default',configFile,env,nodeCommand:'/usr/bin/node'});
+    assert.equal(path.basename(installed.pluginDir),'promptframe');
+    await assert.rejects(access(legacyDir),{code:'ENOENT'});
+
+    // Unowned legacy directory for another profile is never removed
+    const unownedLegacy=path.join(env.ANTIGRAVITY_CONFIG_DIR,'plugins','promptframe-creation-work');
+    await mkdir(unownedLegacy,{recursive:true});
+    await writeFile(path.join(unownedLegacy,'plugin.json'),'{"name":"promptframe-creation-work"}');
+    await installForAntigravityUser({sourceRoot:repoRoot,profile:'work',configFile,env,nodeCommand:'/usr/bin/node'});
+    assert.equal(await readFile(path.join(unownedLegacy,'plugin.json'),'utf8'),'{"name":"promptframe-creation-work"}');
   }finally{await rm(dir,{recursive:true,force:true});}
 });

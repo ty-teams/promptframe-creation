@@ -6,7 +6,7 @@
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.14 connect --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.15 connect --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -26,7 +26,7 @@ npx --yes @promptframe/creation@0.3.14 connect --endpoint <Studio提供的API地
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.14 connect --host claude-code --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.15 connect --host claude-code --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -44,7 +44,7 @@ CLI 优先使用 PATH 中的 Claude；桌面版远程连接 WSL 时，也识别�
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.14 connect --host antigravity --endpoint <Studio提供的API地址>
+npx --yes @promptframe/creation@0.3.15 connect --host antigravity --endpoint <Studio提供的API地址>
 ```
 <!-- /creation-install-command -->
 
@@ -60,7 +60,7 @@ npx --yes @promptframe/creation@0.3.14 connect --host antigravity --endpoint <St
 
 <!-- creation-install-command -->
 ```bash
-npx --yes @promptframe/creation@0.3.14 connect --profile work-account --endpoint <另一环境API地址>
+npx --yes @promptframe/creation@0.3.15 connect --profile work-account --endpoint <另一环境API地址>
 ```
 <!-- /creation-install-command -->
 
